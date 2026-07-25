@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bröd Bread — ออเดอร์ซาวร์โดว์</title>
+<style>
+  :root {
+    --bg: #faf6f0;
+    --card: #ffffff;
+    --ink: #3d2f26;
+    --muted: #8a7a6d;
+    --line: #ece3d8;
+    --accent: #b0703c;
+    --accent-soft: #f6e8db;
+    --green: #2e7d4f; --green-bg: #e3f2e8;
+    --amber: #a86a00; --amber-bg: #fdf0d7;
+    --blue: #2f5f8f;  --blue-bg: #e2edf8;
+    --red: #b03a2e;   --red-bg: #fbe4e1;
+    --gray: #6b6b6b;  --gray-bg: #eeeeee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Sarabun", "Noto Sans Thai", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.5;
+    padding: 16px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  h1 { font-size: 1.45rem; }
+  h1 .brand { color: var(--accent); }
+  .updated { color: var(--muted); font-size: .82rem; }
+
+  /* summary cards */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+  .stat .num { font-size: 1.35rem; font-weight: 700; }
+  .stat .lbl { font-size: .78rem; color: var(--muted); }
+  .stat.warn .num { color: var(--red); }
+  .stat.mid .num { color: var(--amber); }
+
+  /* filters */
+  .filters { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 999px; padding: 5px 13px; font-size: .82rem; cursor: pointer;
+  }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filter-row input, .filter-row select {
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
+    font-size: .85rem; background: #fff; color: var(--ink); font-family: inherit;
+  }
+  .filter-row input[type="search"] { flex: 1; min-width: 160px; }
+  .filter-row label { font-size: .78rem; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .clear-btn { border: none; background: none; color: var(--accent); font-size: .82rem; cursor: pointer; text-decoration: underline; }
+
+  .count { font-size: .82rem; color: var(--muted); margin-bottom: 8px; }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+  th, td { text-align: left; padding: 10px 12px; font-size: .86rem; vertical-align: top; }
+  thead th { background: var(--accent-soft); font-size: .78rem; white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th .arrow { color: var(--accent); }
+  tbody tr { border-top: 1px solid var(--line); }
+  tbody tr:hover { background: #fdf9f4; }
+  tr.overdue { background: #fff5f3; }
+  tr.due-today { background: #fffaec; }
+  .oid { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+  .name { font-weight: 600; white-space: nowrap; }
+  .due { white-space: nowrap; }
+  .due .rel { display: block; font-size: .72rem; color: var(--muted); }
+  .due .rel.late { color: var(--red); font-weight: 600; }
+  .items { min-width: 180px; }
+  .item { display: block; }
+  .item .v { color: var(--muted); font-size: .76rem; }
+  .notes { color: var(--muted); font-size: .78rem; max-width: 260px; }
+  .amount { white-space: nowrap; text-align: right; font-weight: 600; }
+  .amount .mixed { display: block; font-size: .7rem; color: var(--muted); font-weight: 400; }
+
+  .badge { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: .74rem; font-weight: 600; white-space: nowrap; }
+  .b-confirmed { background: var(--blue-bg); color: var(--blue); }
+  .b-making    { background: var(--amber-bg); color: var(--amber); }
+  .b-delivered { background: var(--green-bg); color: var(--green); }
+  .b-cancelled, .b-inquiry { background: var(--gray-bg); color: var(--gray); }
+  .b-paid    { background: var(--green-bg); color: var(--green); }
+  .b-unpaid  { background: var(--red-bg); color: var(--red); }
+  .b-deposit { background: var(--amber-bg); color: var(--amber); }
+  .b-free    { background: var(--gray-bg); color: var(--gray); }
+
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+
+  /* mobile: cards */
+  @media (max-width: 760px) {
+    thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tbody tr { border-top: none; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 4px 0; }
+    table { background: none; border: none; }
+    td { padding: 4px 14px; border: none; }
+    td::before { content: attr(data-l); display: block; font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    td.no-l::before { content: none; }
+    .amount { text-align: left; }
+    .notes { max-width: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="brand">Bröd Bread</span> · ออเดอร์ซาวร์โดว์</h1>
+    <span class="updated" id="updatedAt"></span>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="filters">
+    <div class="chips" id="statusChips"></div>
+    <div class="filter-row">
+      <input type="search" id="q" placeholder="ค้นหาชื่อ / เลขออเดอร์ / โน้ต…">
+      <select id="fPayment">
+        <option value="">การเงิน: ทั้งหมด</option>
+        <option value="unpaid">ยังไม่จ่าย</option>
+        <option value="deposit">มัดจำ</option>
+        <option value="paid">จ่ายแล้ว</option>
+        <option value="free">ฟรี / ชดเชย</option>
+      </select>
+      <select id="fDelivery">
+        <option value="">รับสินค้า: ทั้งหมด</option>
+        <option value="pickup">มารับเอง</option>
+        <option value="delivery">จัดส่ง</option>
+      </select>
+      <select id="fProduct">
+        <option value="">เมนู: ทั้งหมด</option>
+        <option>OG Sourdough</option>
+        <option>Cheddar &amp; Bacon</option>
+        <option>Cranberry Walnut</option>
+        <option>Quinoa Sesame</option>
+      </select>
+      <label>นัดรับตั้งแต่ <input type="date" id="fFrom"></label>
+      <label>ถึง <input type="date" id="fTo"></label>
+      <button class="clear-btn" id="clearBtn">ล้างตัวกรอง</button>
+    </div>
+  </div>
+
+  <div class="count" id="count"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th data-k="due">นัดรับ <span class="arrow"></span></th>
+        <th data-k="name">ลูกค้า <span class="arrow"></span></th>
+        <th>รายการ</th>
+        <th data-k="status">สถานะ <span class="arrow"></span></th>
+        <th data-k="payment">การเงิน <span class="arrow"></span></th>
+        <th>รับสินค้า</th>
+        <th data-k="amount" style="text-align:right">ยอด <span class="arrow"></span></th>
+        <th>โน้ต</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty" id="empty" hidden>ไม่พบออเดอร์ที่ตรงกับตัวกรอง</div>
+</div>
+
+<script>
+/* ================================================================
+ * ข้อมูลออเดอร์ — แก้ไข/เพิ่มแถวตรงนี้ แล้ว push ขึ้น GitHub
+ * UPDATED   : วันที่อัปเดตข้อมูลล่าสุด (แสดงบนหัวเว็บ)
+ * ฟิลด์:
+ *   id       เลขออเดอร์        due      วันนัดรับ (YYYY-MM-DD, "" = ยังไม่นัด)
+ *   ordered  วันสั่ง           name     ชื่อลูกค้า (แสดงได้เฉพาะชื่อเท่านั้น)
+ *   status   inquiry|confirmed|making|delivered|cancelled
+ *   payment  unpaid|deposit|paid|free("" หรือ "free" = ฟรี/ชดเชย)
+ *   delivery pickup|delivery|""        notes  โน้ตสั้นๆ ("" = ไม่มี)
+ *   shipping ค่าส่ง (ตัวเลข, "" = ไม่มี)
+ *   items    [{p: เมนู, v: รายละเอียด, q: จำนวน, lt: ยอดแถว}]
+ *   total    ยอดเต็มทั้งใบ (ใส่เฉพาะเมื่อมีของร้านอื่นรวมด้วย ไม่งั้น "")
+ * ================================================================ */
+const UPDATED = "2026-07-25";
+
+const ORDERS = [
+{id:"ORD-2026-0001",ordered:"2026-07-16",due:"2026-07-19",name:"Pam",status:"delivered",payment:"paid",delivery:"delivery",shipping:"",total:"1049",notes:"",items:[{p:"Cheddar & Bacon",v:"ล็อตแรก ไซส์ใหญ่ (ราคาเปิดเตาพิเศษ)",q:"1",lt:"329"}]},
+{id:"ORD-2026-0002",ordered:"2026-07-15",due:"2026-07-15",name:"พี่เอ",status:"delivered",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"",items:[{p:"OG Sourdough",v:"ราคาพิเศษเพื่อน",q:"1",lt:"149"}]},
+{id:"ORD-2026-0003",ordered:"2026-07-15",due:"2026-07-15",name:"นิค",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"",items:[{p:"OG Sourdough",v:"ราคาพิเศษเพื่อน",q:"2",lt:"298"}]},
+{id:"ORD-2026-0004",ordered:"2026-07-15",due:"2026-07-15",name:"เบส",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ซื้อฝากแม่ (OG ล็อตที่ทำดี + C&B)",items:[{p:"OG Sourdough",v:"ล็อตที่ทำดี",q:"1",lt:"219"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
+{id:"ORD-2026-0005",ordered:"2026-07-15",due:"2026-07-15",name:"พิม",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ล็อต C&B เครื่องน้อย ลดเหลือ 199",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลดราคา)",q:"1",lt:"199"}]},
+{id:"ORD-2026-0006",ordered:"2026-07-15",due:"2026-07-15",name:"พี่ยอด",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ล็อต C&B เครื่องน้อย ลดเหลือ 199",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลดราคา)",q:"1",lt:"199"}]},
+{id:"ORD-2026-0007",ordered:"2026-07-15",due:"2026-07-15",name:"ฟิล",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ล็อต C&B เครื่องน้อย — ฟิลขอจ่ายราคาเต็ม 259",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลูกค้าขอจ่ายราคาเต็ม)",q:"1",lt:"259"}]},
+{id:"ORD-2026-0008",ordered:"2026-07-15",due:"2026-07-15",name:"Eye",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
+{id:"ORD-2026-0009",ordered:"2026-07-15",due:"2026-07-24",name:"เน",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"อบ Bacon แล้ว 2026-07-23; ส่ง 2026-07-24",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
+{id:"ORD-2026-0010",ordered:"2026-07-21",due:"2026-07-25",name:"จนัญญา",status:"confirmed",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0011",ordered:"2026-07-21",due:"2026-07-25",name:"สุวานี",status:"confirmed",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0012",ordered:"2026-07-21",due:"2026-07-25",name:"สัมพันธ์",status:"making",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ; อบ Bacon แล้ว 2026-07-23",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0013",ordered:"2026-07-21",due:"",name:"กี",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ; ยังไม่นัดวันรับ",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0014",ordered:"2026-07-21",due:"",name:"P'Fern",status:"making",payment:"paid",delivery:"",shipping:"",total:"",notes:"ยังไม่ confirm วันรับ; ราคาคีนัวงายังไม่ตกลง; อบ Bacon แล้ว 2026-07-23",items:[{p:"Quinoa Sesame",v:"",q:"1",lt:""},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0015",ordered:"2026-07-21",due:"",name:"P'Ploy",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"ยังไม่ confirm วันรับ",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0016",ordered:"2026-07-21",due:"",name:"Beam",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"ยังไม่มีวันรับที่แน่นอน",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0017",ordered:"2026-07-23",due:"2026-07-29",name:"วลัยทิพย์",status:"confirmed",payment:"unpaid",delivery:"delivery",shipping:"200",total:"1044",notes:"แยกกล่องเผือก/ถั่ว กล่องละ 5 แช่ฟรีสมาเลย",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
+{id:"ORD-2026-0018",ordered:"2026-07-23",due:"2026-07-27",name:"พี่กานต์",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"1 ก้อนมิกซ์ Cranberry+Bacon อย่างละครึ่ง; ออเดอร์แรกของพี่กานต์",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน (มิกซ์กับ Bacon)",q:"0.5",lt:"150"},{p:"Cheddar & Bacon",v:"ครึ่งก้อน (มิกซ์กับ Cranberry)",q:"0.5",lt:"149"}]},
+{id:"ORD-2026-0019",ordered:"2026-07-23",due:"2026-07-27",name:"Aom",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"ลูกค้าใหม่ เห็นจากสตอรี่ IG",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0020",ordered:"2026-07-23",due:"2026-07-24",name:"พี่ดา",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนบ้านที่แม่ไปขาย/ให้ชิม",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0021",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าเพชรเกษม 53",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เดินผ่านหน้าบ้านแล้วมาถาม",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0022",ordered:"2026-07-24",due:"2026-07-26",name:"พี่อุ๊",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"เพื่อนแม่ในหมู่บ้าน เดินผ่านหน้าบ้านมาเห็น",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0023",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าพรจิตแมนชั่น",status:"confirmed",payment:"deposit",delivery:"pickup",shipping:"",total:"",notes:"มัดจำแล้ว 100 เหลือเก็บ 119",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
+{id:"ORD-2026-0024",ordered:"2026-07-24",due:"2026-08-07",name:"ฟิล",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"Sourdough Cranberry ราคาปกติ 279; ของชดเชยแยกเป็น ORD-2026-0033",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0025",ordered:"2026-07-24",due:"",name:"เบส",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"OG 1 + Bacon 1 — ลูกค้ายังไม่ระบุวันรับ",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0026",ordered:"2026-07-25",due:"2026-07-26",name:"อุ๋ย",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ครึ่งลูก แบ่งกับพี่กานต์ (karn); เดินผ่านหน้าบ้านเห็นป้ายมาสั่ง",items:[{p:"Cranberry Walnut",v:"ครึ่งลูก",q:"0.5",lt:"149"}]},
+{id:"ORD-2026-0027",ordered:"2026-07-25",due:"2026-07-26",name:"สมชาย",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ครึ่งก้อน Bacon แบ่งกับพี่กานต์; อบให้ทัน 26 ก.ค. — ครึ่งของพี่กานต์เก็บไว้ส่ง 27 ก.ค.",items:[{p:"Cheddar & Bacon",v:"ครึ่งก้อน (แบ่งกับพี่กานต์)",q:"0.5",lt:"149"}]},
+{id:"ORD-2026-0028",ordered:"2026-07-25",due:"2026-07-31",name:"พิม",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชย ORD-2026-0005 ล็อตเครื่องน้อย); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0029",ordered:"2026-07-25",due:"2026-07-31",name:"พี่ยอด",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชย ORD-2026-0006 ล็อตเครื่องน้อย); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0030",ordered:"2026-07-25",due:"2026-07-31",name:"พี่เอ",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชยออเดอร์แรก ORD-2026-0002); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0031",ordered:"2026-07-25",due:"2026-07-31",name:"นิค",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชยออเดอร์แรก ORD-2026-0003); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0032",ordered:"2026-07-25",due:"2026-07-27",name:"พี่ดา",status:"confirmed",payment:"unpaid",delivery:"delivery",shipping:"",total:"",notes:"ส่งที่ศูนย์ 40 จันทร์ตอนเที่ยง; ยังไม่ตกลงค่าส่ง",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0033",ordered:"2026-07-24",due:"2026-07-31",name:"ฟิล",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชย ORD-2026-0007 — ฟิลจ่ายเต็ม 259 ทั้งที่ล็อตไม่ดี); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0034",ordered:"2026-07-25",due:"2026-07-26",name:"Eye",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลดให้ 10 บาท จากราคาปกติ 279",items:[{p:"Cranberry Walnut",v:"ลดให้ 10 บาท (จาก 279)",q:"1",lt:"269"}]},
+];
+
+/* ================= ตรรกะของหน้าเว็บ (ไม่ต้องแก้) ================= */
+const $ = s => document.querySelector(s);
+const num = v => parseFloat(v) || 0;
+const fmt = n => "฿" + n.toLocaleString("th-TH");
+
+const STATUS_TH = { inquiry:"สอบถาม", confirmed:"ยืนยันแล้ว", making:"กำลังทำ", delivered:"ส่งแล้ว", cancelled:"ยกเลิก" };
+const PAY_TH = { unpaid:"ยังไม่จ่าย", deposit:"มัดจำ", paid:"จ่ายแล้ว", free:"ฟรี" };
+const DELIV_TH = { pickup:"มารับเอง", delivery:"จัดส่ง" };
+const today = new Date(); today.setHours(0,0,0,0);
+
+function amount(o) { // ยอดส่วนซาวร์โดว์ + ค่าส่ง
+  return o.items.reduce((s,i)=>s+num(i.lt),0) + num(o.shipping);
+}
+function payKey(o) {
+  if (o.payment === "free" || o.payment === "" ) return "free";
+  return o.payment;
+}
+function relDue(o) {
+  if (!o.due) return { txt:"ยังไม่นัด", cls:"" };
+  const d = new Date(o.due+"T00:00:00");
+  const diff = Math.round((d-today)/86400000);
+  if (o.status==="delivered"||o.status==="cancelled") return { txt:"", cls:"" };
+  if (diff<0)  return { txt:`เลยนัด ${-diff} วัน`, cls:"late" };
+  if (diff===0) return { txt:"วันนี้!", cls:"late" };
+  if (diff===1) return { txt:"พรุ่งนี้", cls:"" };
+  return { txt:`อีก ${diff} วัน`, cls:"" };
+}
+function esc(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+/* ---- filters state ---- */
+const state = { status:"", q:"", payment:"", delivery:"", product:"", from:"", to:"", sortK:"due", sortDir:1 };
+
+const STATUS_ORDER = ["", "confirmed", "making", "delivered", "inquiry", "cancelled"];
+const STATUS_LABEL = { "":"ทั้งหมด" };
+Object.assign(STATUS_LABEL, STATUS_TH);
+const chipsEl = $("#statusChips");
+STATUS_ORDER.forEach(k=>{
+  const b=document.createElement("button");
+  b.className="chip"+(k===""?" on":""); b.textContent=STATUS_LABEL[k]; b.dataset.k=k;
+  b.onclick=()=>{ state.status=k; chipsEl.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.dataset.k===k)); render(); };
+  chipsEl.appendChild(b);
+});
+$("#q").oninput = e=>{ state.q=e.target.value.trim().toLowerCase(); render(); };
+$("#fPayment").onchange = e=>{ state.payment=e.target.value; render(); };
+$("#fDelivery").onchange = e=>{ state.delivery=e.target.value; render(); };
+$("#fProduct").onchange = e=>{ state.product=e.target.value; render(); };
+$("#fFrom").onchange = e=>{ state.from=e.target.value; render(); };
+$("#fTo").onchange = e=>{ state.to=e.target.value; render(); };
+$("#clearBtn").onclick = ()=>{
+  Object.assign(state,{status:"",q:"",payment:"",delivery:"",product:"",from:"",to:""});
+  $("#q").value=""; $("#fPayment").value=""; $("#fDelivery").value=""; $("#fProduct").value=""; $("#fFrom").value=""; $("#fTo").value="";
+  chipsEl.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.dataset.k===""));
+  render();
+};
+
+document.querySelectorAll("thead th[data-k]").forEach(th=>{
+  th.onclick=()=>{
+    const k=th.dataset.k;
+    if(state.sortK===k) state.sortDir*=-1; else { state.sortK=k; state.sortDir=1; }
+    render();
+  };
+});
+
+function filtered(){
+  return ORDERS.filter(o=>{
+    if(state.status && o.status!==state.status) return false;
+    if(state.payment && payKey(o)!==state.payment) return false;
+    if(state.delivery && o.delivery!==state.delivery) return false;
+    if(state.product && !o.items.some(i=>i.p===state.product)) return false;
+    if(state.from && (!o.due || o.due<state.from)) return false;
+    if(state.to && (!o.due || o.due>state.to)) return false;
+    if(state.q){
+      const hay=(o.id+" "+o.name+" "+o.notes+" "+o.items.map(i=>i.p+" "+i.v).join(" ")).toLowerCase();
+      if(!hay.includes(state.q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>{
+    const dir=state.sortDir, k=state.sortK;
+    let va, vb;
+    if(k==="amount"){ va=amount(a); vb=amount(b); }
+    else if(k==="due"){ va=a.due||"9999"; vb=b.due||"9999"; }
+    else { va=(a[k]||"").toLowerCase(); vb=(b[k]||"").toLowerCase(); }
+    if(va<vb) return -dir; if(va>vb) return dir;
+    return a.id<b.id?-1:1;
+  });
+}
+
+function fmtDate(iso){
+  if(!iso) return "—";
+  const d=new Date(iso+"T00:00:00");
+  return d.toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+}
+
+function render(){
+  document.querySelectorAll("thead th[data-k]").forEach(th=>{
+    th.querySelector(".arrow").textContent = th.dataset.k===state.sortK ? (state.sortDir>0?"▲":"▼") : "";
+  });
+  const rows=filtered();
+  $("#count").textContent=`แสดง ${rows.length} จาก ${ORDERS.length} ออเดอร์`;
+  $("#empty").hidden = rows.length>0;
+
+  const tb=$("#tbody"); tb.innerHTML="";
+  rows.forEach(o=>{
+    const r=relDue(o);
+    const amt=amount(o);
+    const mixed = o.total && num(o.total)!==amt;
+    const tr=document.createElement("tr");
+    if(o.status!=="delivered"&&o.status!=="cancelled"&&o.due){
+      const d=new Date(o.due+"T00:00:00");
+      if(d<today) tr.className="overdue";
+      else if(d.getTime()===today.getTime()) tr.className="due-today";
+    }
+    const itemsHtml=o.items.map(i=>
+      `<span class="item">${esc(i.q)}× ${esc(i.p)}${i.v?` <span class="v">· ${esc(i.v)}</span>`:""}</span>`
+    ).join("");
+    tr.innerHTML=`
+      <td class="due" data-l="นัดรับ">${fmtDate(o.due)}${r.txt?`<span class="rel ${r.cls}">${r.txt}</span>`:""}</td>
+      <td class="no-l"><span class="name">${esc(o.name)}</span><span class="oid">${esc(o.id)}</span></td>
+      <td class="items" data-l="รายการ">${itemsHtml}</td>
+      <td data-l="สถานะ"><span class="badge b-${o.status}">${STATUS_TH[o.status]||o.status}</span></td>
+      <td data-l="การเงิน"><span class="badge b-${payKey(o)}">${PAY_TH[payKey(o)]||o.payment}</span></td>
+      <td data-l="รับสินค้า">${DELIV_TH[o.delivery]||"—"}${o.shipping?`<span class="oid">ค่าส่ง ${fmt(num(o.shipping))}</span>`:""}</td>
+      <td class="amount" data-l="ยอด">${amt?fmt(amt):"—"}${mixed?`<span class="mixed">รวมร้านอื่นด้วย เต็ม ${fmt(num(o.total))}</span>`:""}</td>
+      <td class="notes" data-l="โน้ต">${esc(o.notes)||"—"}</td>`;
+    tb.appendChild(tr);
+  });
+
+  /* summary */
+  const active=ORDERS.filter(o=>o.status==="confirmed"||o.status==="making"||o.status==="inquiry");
+  const outstanding=ORDERS.filter(o=>payKey(o)==="unpaid"&&o.status!=="cancelled").reduce((s,o)=>s+amount(o),0);
+  const dueSoon=active.filter(o=>{ if(!o.due) return false; const d=new Date(o.due+"T00:00:00"); const diff=(d-today)/86400000; return diff<=2; }).length;
+  $("#stats").innerHTML=`
+    <div class="stat mid"><div class="num">${active.length}</div><div class="lbl">ออเดอร์ที่ต้องทำ</div></div>
+    <div class="stat warn"><div class="num">${dueSoon}</div><div class="lbl">นัดรับภายใน 2 วัน</div></div>
+    <div class="stat warn"><div class="num">${fmt(outstanding)}</div><div class="lbl">ยอดค้างเก็บ</div></div>
+    <div class="stat"><div class="num">${ORDERS.filter(o=>o.status==="delivered").length}</div><div class="lbl">ส่งแล้ว</div></div>`;
+}
+
+$("#updatedAt").textContent = "อัปเดตล่าสุด " + new Date(UPDATED+"T00:00:00").toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric"});
+render();
+</script>
+</body>
+</html>
