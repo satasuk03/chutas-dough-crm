@@ -395,7 +395,7 @@
  *   items    [{p: เมนู, v: รายละเอียด, q: จำนวน, lt: ยอดแถว}]
  *   total    ยอดเต็มทั้งใบ (ใส่เฉพาะเมื่อมีของร้านอื่นรวมด้วย ไม่งั้น "")
  * ================================================================ */
-const UPDATED = "2026-07-26";
+const UPDATED = "2026-07-27";
 
 const ORDERS = [
 {id:"ORD-2026-0001",ordered:"2026-07-16",due:"2026-07-19",name:"Pam",status:"delivered",payment:"paid",delivery:"delivery",shipping:"",total:"1049",notes:"",items:[{p:"Cheddar & Bacon",v:"ล็อตแรก ไซส์ใหญ่ (ราคาเปิดเตาพิเศษ)",q:"1",lt:"329"}]},
@@ -442,6 +442,8 @@ const ORDERS = [
 {id:"ORD-2026-0042",ordered:"2026-07-26",due:"2026-07-27",name:"Eye",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"Cheddar & Bacon ครึ่งก้อน 149; รับวันนี้; รอชำระ",items:[{p:"Cheddar & Bacon",v:"ครึ่งก้อน",q:"0.5",lt:"149"}]},
 {id:"ORD-2026-0043",ordered:"2026-07-27",due:"2026-07-27",name:"ดี",status:"confirmed",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ walk-in เห็นหน้าร้านแล้วมาซื้อ (ซอยเพชรเกษม 51); จ่ายเงินแล้ว มารับวันนี้",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0044",ordered:"2026-07-27",due:"2026-08-01",name:"แม่เอก",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนแม่ คนในซอย; มารับ 2026-08-01",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0045",ordered:"2026-07-27",due:"2026-07-31",name:"Fight",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนมหาลัย + office อายุ 28; รับศุกร์ 2026-07-31",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0046",ordered:"2026-07-27",due:"2026-07-31",name:"Tee",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนออฟฟิศ อายุ 24; รับศุกร์ 2026-07-31; Special request: ใส่ mozzarella ถ้าเป็นไปได้",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
 ];
 
 /* ================= ตรรกะของหน้าเว็บ (ไม่ต้องแก้) ================= */
