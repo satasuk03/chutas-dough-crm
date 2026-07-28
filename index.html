@@ -31,6 +31,9 @@
     --soft: #5B463E;
     --tint: #EEF5FB;
     --paper: #FFFBF8; /* card face: cream, one step lighter */
+    /* "รอส่ง / ค้างเก็บ" = หมึกน้ำตาลเจือจาง ไม่ใช่สีเทาใหม่ — ยังเป็น two inks on cream */
+    --wait: rgba(43,26,21,.20);
+    --wait-lo: rgba(43,26,21,.085);
     --f-display: "Unbounded", "Sarabun", "Noto Sans Thai", sans-serif;
     --f-body: "IBM Plex Sans", "Sarabun", "Noto Sans Thai", -apple-system, sans-serif;
     --f-mono: "IBM Plex Mono", ui-monospace, "Sarabun", monospace;
@@ -170,6 +173,74 @@
   .money-row .v.red { color: var(--red); }
   .money-row .v.blue { color: var(--blue); }
 
+  /* ============ แถบความคืบหน้า: ส่งแล้ว vs รอส่ง ============ */
+  .panel-body.stack { display: flex; flex-direction: column; gap: 14px; }
+  .panel.loaf { margin-top: 18px; }
+  .panel-head h2 { min-width: 0; overflow-wrap: break-word; }
+
+  .headline { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; min-width: 0; }
+  .headline .pad { flex: 1 1 auto; }
+  .big {
+    font-family: var(--f-display); font-weight: 900; line-height: .95;
+    font-size: clamp(2rem, 6vw, 2.8rem); letter-spacing: -.03em; color: var(--red);
+  }
+  .big.sm { font-size: clamp(1.45rem, 4.4vw, 1.9rem); }
+  .big .of { font-size: .38em; font-weight: 700; color: var(--soft); letter-spacing: 0; }
+  .headline .lbl { font-family: var(--f-mono); font-size: .66rem; text-transform: uppercase; letter-spacing: .14em; color: var(--soft); padding-bottom: 5px; }
+  .headline .lbl b { display: block; font-family: var(--f-body); font-size: .95rem; letter-spacing: 0; text-transform: none; color: var(--ink); font-weight: 700; }
+
+  .track { display: flex; height: 30px; border: 3px solid var(--ink); border-radius: 999px; background: var(--cream); overflow: hidden; }
+  .track.slim { height: 18px; }
+  .seg { height: 100%; display: flex; align-items: center; min-width: 0; }
+  .seg.done { background: repeating-linear-gradient(45deg, var(--red) 0 8px, #a8180f 8px 16px); }
+  .seg.done.b { background: repeating-linear-gradient(45deg, var(--blue) 0 8px, #4784b6 8px 16px); }
+  .seg.dep  { background: repeating-linear-gradient(45deg, var(--red) 0 8px, #a8180f 8px 16px); }
+  .seg.wait { background: repeating-linear-gradient(45deg, var(--wait) 0 6px, var(--wait-lo) 6px 12px); }
+  .seg + .seg { border-left: 3px solid var(--ink); }
+  .seg .in {
+    font-family: var(--f-mono); font-weight: 600; font-size: .68rem; letter-spacing: .1em;
+    padding: 0 12px; white-space: nowrap; overflow: hidden;
+  }
+  .seg.done .in { color: var(--cream); }
+  .seg.wait .in { color: var(--ink); }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend span { display: flex; align-items: center; gap: 7px; font-size: .8rem; color: var(--soft); }
+  .legend span[hidden] { display: none; }  /* display:flex ข้างบนชนะ [hidden] ของ browser ต้องปิดเอง */
+  .sw { width: 22px; height: 14px; border: 2px solid var(--ink); border-radius: 4px; flex: 0 0 auto; }
+  .sw.done, .sw.dep { background: repeating-linear-gradient(45deg, var(--red) 0 5px, #a8180f 5px 10px); }
+  .sw.done.b { background: repeating-linear-gradient(45deg, var(--blue) 0 5px, #4784b6 5px 10px); }
+  .sw.wait { background: repeating-linear-gradient(45deg, var(--wait) 0 4px, var(--wait-lo) 4px 8px); }
+
+  .rows { display: flex; flex-direction: column; }
+  .prow { padding: 9px 0; border-top: 2px dashed rgba(43,26,21,.22); display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .prow:first-child { border-top: none; }
+  .prow-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: .87rem; min-width: 0; }
+  .prow-meta .pname { font-weight: 700; }
+  .prow-meta .pval { font-family: var(--f-mono); font-size: .72rem; color: var(--soft); white-space: nowrap; }
+  .prow-meta .pval b { color: var(--ink); }
+  .prow-meta .pval .w { color: var(--red); }
+  .fine { font-family: var(--f-mono); font-size: .64rem; line-height: 1.8; text-transform: uppercase; letter-spacing: .1em; color: var(--soft); }
+
+  /* ชิปสรุป "ต้องอบกี่ก้อน" ในพาเนลกำหนดการนัดรับ */
+  .bake { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin: 4px 0 3px; }
+  .tot {
+    font-family: var(--f-display); font-weight: 700; font-size: .76rem;
+    background: var(--red); color: var(--cream); border: 3px solid var(--ink);
+    border-radius: 999px; padding: 2px 12px; white-space: nowrap;
+  }
+  .bc {
+    font-family: var(--f-body); font-weight: 600; font-size: .78rem; color: var(--ink);
+    background: var(--paper); border: 3px solid var(--blue); border-radius: 999px;
+    padding: 2px 11px; white-space: nowrap;
+  }
+  .bc em { font-family: var(--f-display); font-weight: 800; font-style: normal; color: var(--blue); }
+  .total-strip {
+    margin-top: 12px; border: 3px solid var(--ink); border-radius: 14px; background: var(--tint);
+    padding: 11px 14px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  }
+  .total-strip .k { font-family: var(--f-mono); font-size: .63rem; text-transform: uppercase; letter-spacing: .14em; color: var(--soft); margin-right: 2px; }
+
   /* ============ filters ============ */
   .filters {
     background: var(--paper); border: 3px solid var(--ink); border-radius: 18px;
@@ -291,6 +362,11 @@
     .who { flex-direction: column; gap: 0; }
     .who .what { text-align: left; }
     .daystamp { flex-basis: 50px; }
+    /* ข้อความไทยไม่มีเว้นวรรค → min-content กว้าง กันแถวยอด/แถบล้นออกข้าง */
+    .prow-meta { flex-direction: column; gap: 1px; }
+    .prow-meta .pval { white-space: normal; }
+    .seg .in { padding: 0 8px; font-size: .62rem; }
+    .headline { gap: 12px; }
   }
 </style>
 </head>
@@ -311,6 +387,24 @@
 
   <div class="stats" id="stats"></div>
 
+  <section class="panel loaf" aria-label="ความคืบหน้าก้อนขนมปัง">
+    <div class="panel-head"><h2>ก้อนขนมปัง — ส่งแล้ว vs รอส่ง</h2><span class="hint">นับเป็นก้อน ไม่ใช่ใบออเดอร์</span></div>
+    <div class="panel-body stack">
+      <div class="headline">
+        <div class="big" id="loafBig"></div>
+        <div class="lbl" id="loafLbl"></div>
+        <span class="pad"></span>
+        <div class="legend">
+          <span><i class="sw done"></i> ส่งแล้ว</span>
+          <span><i class="sw wait"></i> รอส่ง</span>
+        </div>
+      </div>
+      <div class="track" id="loafTrack" role="img"></div>
+      <div class="rows" id="loafRows"></div>
+      <p class="fine" id="loafFine"></p>
+    </div>
+  </section>
+
   <div class="panels">
     <section class="panel" aria-label="กำหนดการนัดรับ">
       <div class="panel-head"><h2>กำหนดการนัดรับ</h2><span class="hint">ออเดอร์ที่ยังไม่ส่ง</span></div>
@@ -323,7 +417,19 @@
       </section>
       <section class="panel" aria-label="สรุปการเงิน">
         <div class="panel-head"><h2>การเงิน</h2><span class="hint">รวมค่าส่ง ไม่รวมของร้านอื่น</span></div>
-        <div class="panel-body" id="money"></div>
+        <div class="panel-body stack">
+          <div class="headline">
+            <div class="big sm" id="mBig"></div>
+            <div class="lbl" id="mLbl"></div>
+          </div>
+          <div class="track" id="mTrack" role="img"></div>
+          <div class="legend">
+            <span><i class="sw done b"></i> เก็บแล้ว</span>
+            <span id="mLegDep" hidden><i class="sw dep"></i> มัดจำ</span>
+            <span><i class="sw wait"></i> ค้างเก็บ</span>
+          </div>
+          <div id="money"></div>
+        </div>
       </section>
     </div>
   </div>
@@ -549,6 +655,77 @@ function fmtDate(iso){
 /* ---- dashboard panels ---- */
 const isActive = o => o.status==="confirmed"||o.status==="making"||o.status==="inquiry";
 
+/* ลำดับเมนูที่อยากให้แสดง — เมนูใหม่ที่ยังไม่อยู่ในลิสต์จะต่อท้ายให้อัตโนมัติ
+   (ห้าม filter ด้วย PROD_ORDER เพียวๆ ไม่งั้นเมนูใหม่จะหายจากแท่ง/ชิป แต่ยังถูกนับในยอดรวม) */
+const PROD_ORDER = ["Cheddar & Bacon", "Cranberry Walnut", "OG Sourdough", "Quinoa Sesame"];
+const prodsOf = obj => PROD_ORDER.concat(Object.keys(obj).filter(k=>!PROD_ORDER.includes(k)))
+  .filter(p => obj[p]);
+
+/* ไม่วาด segment ที่กว้าง 0 — ไม่งั้นเส้นหมึกคั่นจะโผล่มาลอยๆ */
+const seg = (cls, w, label, inner) => w <= 0 ? "" :
+  `<div class="seg ${cls}" style="width:${w}%" title="${label}">${inner?`<span class="in">${inner}</span>`:""}</div>`;
+
+/* ชิป "ต้องอบ" จาก {เมนู: จำนวนก้อน} */
+const bakeChips = prods => prodsOf(prods)
+  .map(p=>`<span class="bc"><em>${fmtQ(prods[p])}×</em> ${esc(p)}</span>`).join("");
+
+/* นับเป็นก้อน (items[].q) ไม่ใช่ใบออเดอร์ — ครึ่งก้อน = 0.5, ยกเลิกไม่นับ,
+   ของฟรี/ชดเชยนับเป็นก้อน (เป็นขนมปังจริง) แต่ไม่นับเป็นเงิน */
+function loafStats(){
+  const per = {};
+  let done = 0, wait = 0;
+  ORDERS.forEach(o=>{
+    const bucket = o.status==="delivered" ? "done" : (isActive(o) ? "wait" : null);
+    if(!bucket) return;
+    o.items.forEach(i=>{
+      const q = num(i.q);
+      const p = per[i.p] = per[i.p] || {done:0, wait:0};
+      p[bucket] += q;
+      if(bucket==="done") done += q; else wait += q;
+    });
+  });
+  return { per, done, wait };
+}
+
+function renderLoaves(){
+  const {per, done, wait} = loafStats();
+  const total = done + wait;
+  if(!total){
+    $("#loafBig").textContent = "0";
+    $("#loafLbl").innerHTML = "ยังไม่มีออเดอร์";
+    $("#loafTrack").innerHTML = ""; $("#loafRows").innerHTML = ""; $("#loafFine").textContent = "";
+    return;
+  }
+  const pct = Math.round(done/total*100);
+
+  $("#loafBig").innerHTML = `${fmtQ(done)}<span class="of"> / ${fmtQ(total)} ก้อน</span>`;
+  $("#loafLbl").innerHTML = `ส่งแล้ว ${pct}%<b>เหลืออบอีก ${fmtQ(wait)} ก้อน</b>`;
+
+  $("#loafTrack").setAttribute("aria-label", `ส่งแล้ว ${fmtQ(done)} ก้อน จากทั้งหมด ${fmtQ(total)} ก้อน`);
+  $("#loafTrack").innerHTML =
+    seg("done", done/total*100, `ส่งแล้ว ${fmtQ(done)} ก้อน`, `ส่งแล้ว ${fmtQ(done)}`) +
+    seg("wait", wait/total*100, `รอส่ง ${fmtQ(wait)} ก้อน`, `รอส่ง ${fmtQ(wait)}`);
+
+  /* รายเมนูใช้สเกลเดียวกัน: ความยาวแท่ง = ยอดสั่งรวม, สัดส่วนในแท่ง = ความคืบหน้า
+     ไม่ใส่ min-width เพราะจะทำให้เมนูยอดน้อยดูเยอะกว่าจริง */
+  const rows = prodsOf(per).map(p=>({p, ...per[p], tot: per[p].done+per[p].wait}));
+  const max = Math.max(...rows.map(r=>r.tot));
+  $("#loafRows").innerHTML = rows.map(r=>`
+    <div class="prow">
+      <div class="prow-meta">
+        <span class="pname">${esc(r.p)}</span>
+        <span class="pval">ส่งแล้ว <b>${fmtQ(r.done)}</b> · รอส่ง <span class="w">${fmtQ(r.wait)}</span> · รวม ${fmtQ(r.tot)} ก้อน</span>
+      </div>
+      <div class="track slim" role="img" style="width:${r.tot/max*100}%"
+           aria-label="${esc(r.p)} ส่งแล้ว ${fmtQ(r.done)} จาก ${fmtQ(r.tot)} ก้อน">
+        ${seg("done", r.done/r.tot*100, `ส่งแล้ว ${fmtQ(r.done)} ก้อน`)}
+        ${seg("wait", r.wait/r.tot*100, `รอส่ง ${fmtQ(r.wait)} ก้อน`)}
+      </div>
+    </div>`).join("");
+
+  $("#loafFine").textContent = `ความยาวแท่งรายเมนู = ยอดสั่งรวม (สเกลเดียวกัน สูงสุด ${fmtQ(max)} ก้อน) · ครึ่งก้อนนับเป็น 0.5 · ออเดอร์ยกเลิกไม่นับ · ของฟรี/ชดเชยนับเป็นก้อน`;
+}
+
 function renderSchedule(){
   const el=$("#schedule");
   const upcoming=ORDERS.filter(o=>isActive(o)&&o.due)
@@ -560,6 +737,20 @@ function renderSchedule(){
   }
   const groups={};
   upcoming.forEach(o=>{ (groups[o.due]=groups[o.due]||[]).push(o); });
+
+  /* สรุปว่าวันนั้นต้องอบอะไรกี่ก้อน — {เมนู: ก้อน} + ยอดรวม */
+  const bakeOf = list => {
+    const prods={}; let loaves=0;
+    list.forEach(o=>o.items.forEach(i=>{
+      const q=num(i.q); prods[i.p]=(prods[i.p]||0)+q; loaves+=q;
+    }));
+    return {prods, loaves};
+  };
+  const bakeBar = list => {
+    const {prods, loaves} = bakeOf(list);
+    return `<div class="bake"><span class="tot">ต้องอบ ${fmtQ(loaves)} ก้อน</span>${bakeChips(prods)}</div>`;
+  };
+
   let html="";
   Object.keys(groups).sort().forEach(due=>{
     const d=new Date(due+"T00:00:00");
@@ -572,7 +763,7 @@ function renderSchedule(){
     }).join("");
     html+=`<div class="dayrow ${cls}">
       <div class="daystamp"><div class="d">${d.getDate()}</div><div class="m">${d.toLocaleDateString("th-TH",{month:"short"})}</div></div>
-      <div class="daylist"><span class="rel ${diff<=0?"late":""}">${rel} · ${groups[due].length} ออเดอร์</span>${whos}</div>
+      <div class="daylist"><span class="rel ${diff<=0?"late":""}">${rel} · ${groups[due].length} ออเดอร์</span>${bakeBar(groups[due])}${whos}</div>
     </div>`;
   });
   if(unscheduled.length){
@@ -581,9 +772,15 @@ function renderSchedule(){
     ).join("");
     html+=`<div class="dayrow">
       <div class="daystamp"><div class="d">?</div><div class="m">ยังไม่นัด</div></div>
-      <div class="daylist"><span class="rel">รอนัดวันรับ · ${unscheduled.length} ออเดอร์</span>${whos}</div>
+      <div class="daylist"><span class="rel">รอนัดวันรับ · ${unscheduled.length} ออเดอร์</span>${bakeBar(unscheduled)}${whos}</div>
     </div>`;
   }
+
+  /* แถบรวมท้ายพาเนล — ค้างอบทั้งหมด ใช้ตอนคิดแป้ง/ของ */
+  const all = bakeOf(upcoming.concat(unscheduled));
+  html += `<div class="total-strip"><span class="k">ค้างอบทั้งหมด</span>`
+       +  `<span class="tot">${fmtQ(all.loaves)} ก้อน</span>${bakeChips(all.prods)}</div>`;
+
   el.innerHTML=html;
 }
 
@@ -608,11 +805,27 @@ function renderMoney(){
   const outstanding=live.filter(o=>payKey(o)==="unpaid").reduce((s,o)=>s+amount(o),0);
   const deposit=live.filter(o=>payKey(o)==="deposit").reduce((s,o)=>s+amount(o),0);
   const freeN=live.filter(o=>payKey(o)==="free").length;
+  const unpaidN=live.filter(o=>payKey(o)==="unpaid").length;
   $("#money").innerHTML=`
     <div class="money-row"><span class="k">เก็บแล้ว</span><span class="v">${fmt(collected)}</span></div>
-    <div class="money-row"><span class="k">ค้างเก็บ</span><span class="v red">${fmt(outstanding)}</span></div>
+    <div class="money-row"><span class="k">ค้างเก็บ · ${unpaidN} ออเดอร์</span><span class="v red">${fmt(outstanding)}</span></div>
     <div class="money-row"><span class="k">มัดจำ</span><span class="v blue">${fmt(deposit)}</span></div>
     <div class="money-row"><span class="k">ของฟรี / ชดเชย</span><span class="v blue">${freeN} ออเดอร์</span></div>`;
+
+  /* แถบเก็บเงิน — เก็บแล้ว (ฟ้า) vs ค้างเก็บ (เทาๆ) */
+  const total=collected+outstanding+deposit;
+  if(!total){
+    $("#mBig").textContent=fmt(0); $("#mLbl").innerHTML="ยังไม่มียอด"; $("#mTrack").innerHTML="";
+    return;
+  }
+  $("#mBig").innerHTML=`${fmt(collected)}<span class="of"> / ${fmt(total)}</span>`;
+  $("#mLbl").innerHTML=`เก็บแล้ว ${Math.round(collected/total*100)}%<b>ค้างเก็บ ${fmt(outstanding)}</b>`;
+  $("#mTrack").setAttribute("aria-label",`เก็บเงินแล้ว ${fmt(collected)} จากยอดรวม ${fmt(total)}`);
+  $("#mTrack").innerHTML=
+    seg("done b", collected/total*100, `เก็บแล้ว ${fmt(collected)}`, `เก็บแล้ว ${fmt(collected)}`) +
+    seg("dep", deposit/total*100, `มัดจำ ${fmt(deposit)}`) +
+    seg("wait", outstanding/total*100, `ค้างเก็บ ${fmt(outstanding)}`, `ค้าง ${fmt(outstanding)}`);
+  $("#mLegDep").hidden = deposit <= 0;   /* โชว์เฉพาะเมื่อมีมัดจำจริง */
 }
 
 /* ---- main render ---- */
@@ -660,6 +873,7 @@ function render(){
     <div class="stat warn"><div class="num">${fmt(outstanding)}</div><div class="lbl">ยอดค้างเก็บ</div></div>
     <div class="stat info"><div class="num">${ORDERS.filter(o=>o.status==="delivered").length}</div><div class="lbl">ส่งแล้ว</div></div>`;
 
+  renderLoaves();
   renderSchedule();
   renderProducts();
   renderMoney();
