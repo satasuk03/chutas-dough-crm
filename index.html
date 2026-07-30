@@ -275,6 +275,25 @@
     color: var(--red); font-family: var(--f-body); font-weight: 600; font-size: .82rem;
     text-decoration: underline; text-underline-offset: 3px;
   }
+  /* สวิตช์ "ซ่อนที่ปิดแล้ว" — pill สองหมึกเหมือน .chip แต่เป็น toggle จริง (มี checkbox ข้างใน) */
+  .filter-row label.switch {
+    font-family: var(--f-body); font-size: .82rem; font-weight: 600;
+    text-transform: none; letter-spacing: 0; color: var(--blue);
+    border: 3px solid var(--blue); background: var(--paper);
+    border-radius: 999px; padding: 5px 14px 5px 11px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; user-select: none;
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .filter-row label.switch:hover { background: var(--tint); }
+  .filter-row label.switch.on {
+    background: var(--red); border-color: var(--ink); color: var(--cream);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .filter-row label.switch.on:hover { background: var(--red); }
+  .switch input { appearance: none; margin: 0; width: 16px; height: 16px; flex: none; cursor: pointer;
+    border: 2.5px solid currentColor; border-radius: 5px; background: transparent;
+    display: grid; place-items: center; }
+  .switch.on input::after { content: "✓"; font-size: .72rem; font-weight: 700; line-height: 1; color: var(--cream); }
 
   .count { font-family: var(--f-mono); font-size: .68rem; text-transform: uppercase; letter-spacing: .14em; color: var(--soft); margin: 0 4px 10px; }
 
@@ -450,15 +469,13 @@
         <option value="pickup">มารับเอง</option>
         <option value="delivery">จัดส่ง</option>
       </select>
-      <select id="fProduct">
-        <option value="">เมนู: ทั้งหมด</option>
-        <option>OG Sourdough</option>
-        <option>Cheddar &amp; Bacon</option>
-        <option>Cranberry Walnut</option>
-        <option>Quinoa Sesame</option>
-      </select>
+      <select id="fProduct"><option value="">เมนู: ทั้งหมด</option></select>
       <label>นัดรับตั้งแต่ <input type="date" id="fFrom"></label>
       <label>ถึง <input type="date" id="fTo"></label>
+      <label class="switch on" id="hideClosedLabel" title="ปิดแล้ว = ส่งแล้ว + จ่ายแล้ว/ของฟรี หรือ ยกเลิก">
+        <input type="checkbox" id="hideClosed" checked>
+        ซ่อนที่ปิดแล้ว
+      </label>
       <button class="clear-btn" id="clearBtn">ล้างตัวกรอง</button>
     </div>
   </div>
@@ -489,79 +506,85 @@
 
 <script>
 /* ================================================================
- * ข้อมูลออเดอร์ — แก้ไข/เพิ่มแถวตรงนี้ แล้ว push ขึ้น GitHub
- * UPDATED   : วันที่อัปเดตข้อมูลล่าสุด (แสดงบนหัวเว็บ)
- * ฟิลด์:
- *   id       เลขออเดอร์        due      วันนัดรับ (YYYY-MM-DD, "" = ยังไม่นัด)
- *   ordered  วันสั่ง           name     ชื่อลูกค้า (แสดงได้เฉพาะชื่อเท่านั้น)
- *   status   inquiry|confirmed|making|delivered|cancelled
- *   payment  unpaid|deposit|paid|free("" หรือ "free" = ฟรี/ชดเชย)
- *   delivery pickup|delivery|""        notes  โน้ตสั้นๆ ("" = ไม่มี)
- *   shipping ค่าส่ง (ตัวเลข, "" = ไม่มี)
- *   items    [{p: เมนู, v: รายละเอียด, q: จำนวน, lt: ยอดแถว}]
- *   total    ยอดเต็มทั้งใบ (ใส่เฉพาะเมื่อมีของร้านอื่นรวมด้วย ไม่งั้น "")
+ * ข้อมูลออเดอร์ — GENERATED ห้ามแก้ในไฟล์นี้
+ *
+ * source of truth คือ CSV ใน crm/ → แก้ที่นั่นแล้วรัน:
+ *     cd ../ && python3 build-dashboard.py
+ * (เช็คว่าหน้าเว็บตรงกับ CSV ไหม: python3 build-dashboard.py --check)
+ *
+ * ที่มาของแต่ละฟิลด์:
+ *   id       orders.csv order_id      due      orders.csv date_due ("" = ยังไม่นัด)
+ *   ordered  orders.csv date_ordered  name     customers.csv name (ชื่อเท่านั้น ไม่มีเบอร์)
+ *   status   orders.csv status        inquiry|confirmed|making|delivered|cancelled
+ *   payment  orders.csv payment       unpaid|deposit|paid ("" = ฟรี/ชดเชย)
+ *   delivery orders.csv delivery      notes    orders.csv notes (ถ้าเป็นชื่อไฟล์โน้ต → "")
+ *   shipping orders.csv shipping_fee  total    orders.csv total (ยอดเต็มทั้งใบทุกแบรนด์)
+ *   items    order-items.csv เฉพาะ brand=brod-bread
+ *            p = short-name จากโน้ตสินค้า, v = variant, q = qty, lt = line_total
  * ================================================================ */
-const UPDATED = "2026-07-29";
+/* ===== GENERATED FROM CSV — สร้างด้วย build-dashboard.py — ห้ามแก้มือ ===== */
+const UPDATED = "2026-07-30";
 
 const ORDERS = [
 {id:"ORD-2026-0001",ordered:"2026-07-16",due:"2026-07-19",name:"Pam",status:"delivered",payment:"paid",delivery:"delivery",shipping:"",total:"1049",notes:"",items:[{p:"Cheddar & Bacon",v:"ล็อตแรก ไซส์ใหญ่ (ราคาเปิดเตาพิเศษ)",q:"1",lt:"329"}]},
-{id:"ORD-2026-0002",ordered:"2026-07-15",due:"2026-07-15",name:"พี่เอ",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"",items:[{p:"OG Sourdough",v:"ราคาพิเศษเพื่อน",q:"1",lt:"149"}]},
-{id:"ORD-2026-0003",ordered:"2026-07-15",due:"2026-07-15",name:"นิค",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"",items:[{p:"OG Sourdough",v:"ราคาพิเศษเพื่อน",q:"2",lt:"298"}]},
-{id:"ORD-2026-0004",ordered:"2026-07-15",due:"2026-07-15",name:"เบส",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ซื้อฝากแม่ (OG ล็อตที่ทำดี + C&B)",items:[{p:"OG Sourdough",v:"ล็อตที่ทำดี",q:"1",lt:"219"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
-{id:"ORD-2026-0005",ordered:"2026-07-15",due:"2026-07-15",name:"พิม",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ล็อต C&B เครื่องน้อย ลดเหลือ 199",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลดราคา)",q:"1",lt:"199"}]},
-{id:"ORD-2026-0006",ordered:"2026-07-15",due:"2026-07-15",name:"พี่ยอด",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ล็อต C&B เครื่องน้อย ลดเหลือ 199",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลดราคา)",q:"1",lt:"199"}]},
-{id:"ORD-2026-0007",ordered:"2026-07-15",due:"2026-07-15",name:"ฟิล",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ล็อต C&B เครื่องน้อย — ฟิลขอจ่ายราคาเต็ม 259",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลูกค้าขอจ่ายราคาเต็ม)",q:"1",lt:"259"}]},
-{id:"ORD-2026-0008",ordered:"2026-07-15",due:"2026-07-15",name:"Eye",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
-{id:"ORD-2026-0009",ordered:"2026-07-15",due:"2026-07-24",name:"เน",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"อบ Bacon แล้ว 2026-07-23; ส่ง 2026-07-24",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
-{id:"ORD-2026-0010",ordered:"2026-07-21",due:"2026-07-25",name:"จนัญญา",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0011",ordered:"2026-07-21",due:"2026-07-25",name:"สุวานี",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0012",ordered:"2026-07-21",due:"2026-07-25",name:"สัมพันธ์",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ; อบ Bacon แล้ว 2026-07-23",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0013",ordered:"2026-07-21",due:"2026-07-29",name:"กี",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ; เอาแค่ Cranberry (ยกเลิก Bacon); ส่งพุธ 2026-07-29; ส่งและจ่ายแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0002",ordered:"2026-07-15",due:"2026-07-15",name:"พี่เอ",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"149",notes:"",items:[{p:"OG Sourdough",v:"ราคาพิเศษเพื่อน",q:"1",lt:"149"}]},
+{id:"ORD-2026-0003",ordered:"2026-07-15",due:"2026-07-15",name:"นิค",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"298",notes:"",items:[{p:"OG Sourdough",v:"ราคาพิเศษเพื่อน",q:"2",lt:"298"}]},
+{id:"ORD-2026-0004",ordered:"2026-07-15",due:"2026-07-15",name:"เบส",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"478",notes:"ซื้อฝากแม่ (OG ล็อตที่ทำดี + C&B)",items:[{p:"OG Sourdough",v:"ล็อตที่ทำดี",q:"1",lt:"219"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
+{id:"ORD-2026-0005",ordered:"2026-07-15",due:"2026-07-15",name:"พิม",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"199",notes:"ล็อต C&B เครื่องน้อย ลดเหลือ 199",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลดราคา)",q:"1",lt:"199"}]},
+{id:"ORD-2026-0006",ordered:"2026-07-15",due:"2026-07-15",name:"พี่ยอด",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"199",notes:"ล็อต C&B เครื่องน้อย ลดเหลือ 199",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลดราคา)",q:"1",lt:"199"}]},
+{id:"ORD-2026-0007",ordered:"2026-07-15",due:"2026-07-15",name:"ฟิล",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"259",notes:"ล็อต C&B เครื่องน้อย (ลดเหลือ 199) — ฟิลขอจ่ายราคาเต็ม 259 ไม่รับส่วนลด",items:[{p:"Cheddar & Bacon",v:"ล็อตเครื่องน้อย (ลูกค้าขอจ่ายราคาเต็ม)",q:"1",lt:"259"}]},
+{id:"ORD-2026-0008",ordered:"2026-07-15",due:"2026-07-15",name:"Eye",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"259",notes:"",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
+{id:"ORD-2026-0009",ordered:"2026-07-15",due:"2026-07-24",name:"เน",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"259",notes:"อบ Bacon แล้ว 2026-07-23; ส่ง 2026-07-24",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"259"}]},
+{id:"ORD-2026-0010",ordered:"2026-07-21",due:"2026-07-25",name:"จนัญญา",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"279",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0011",ordered:"2026-07-21",due:"2026-07-25",name:"สุวานี",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"279",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0012",ordered:"2026-07-21",due:"2026-07-25",name:"สัมพันธ์",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"558",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ; อบ Bacon แล้ว 2026-07-23",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0013",ordered:"2026-07-21",due:"2026-07-29",name:"กี",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"279",notes:"ลูกค้าแนะนำจากพี่นักกายภาพ; เอาแค่ Cranberry (ยกเลิก Bacon); ส่งพุธ 2026-07-29; ส่งและจ่ายแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0014",ordered:"2026-07-21",due:"",name:"P'Fern",status:"making",payment:"paid",delivery:"",shipping:"",total:"",notes:"ยังไม่ confirm วันรับ; ราคาคีนัวงายังไม่ตกลง; อบ Cheddar & Bacon เสร็จแล้ว 2026-07-23; Quinoa Sesame ยังไม่ได้ทำ",items:[{p:"Quinoa Sesame",v:"",q:"1",lt:""},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0015",ordered:"2026-07-21",due:"",name:"P'Ploy",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"ยังไม่ confirm วันรับ",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0016",ordered:"2026-07-21",due:"2026-07-31",name:"Beam",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"รับศุกร์ 2026-07-31",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0015",ordered:"2026-07-21",due:"",name:"P'Ploy",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"279",notes:"ยังไม่ confirm วันรับ",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0016",ordered:"2026-07-21",due:"2026-07-31",name:"Beam",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"279",notes:"รับศุกร์ 2026-07-31",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0017",ordered:"2026-07-23",due:"2026-07-29",name:"วลัยทิพย์",status:"delivered",payment:"paid",delivery:"delivery",shipping:"200",total:"1044",notes:"แยกกล่องเผือก/ถั่ว กล่องละ 5 แช่ฟรีสมาเลย; ส่งและจ่ายแล้ว 2026-07-29",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
-{id:"ORD-2026-0018",ordered:"2026-07-23",due:"2026-07-27",name:"พี่กานต์",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"1 ก้อนมิกซ์ Cranberry+Bacon อย่างละครึ่ง; ออเดอร์แรกของพี่กานต์; อบเสร็จแล้ว 2026-07-25; ส่งและจ่ายแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน (มิกซ์กับ Bacon)",q:"0.5",lt:"150"},{p:"Cheddar & Bacon",v:"ครึ่งก้อน (มิกซ์กับ Cranberry)",q:"0.5",lt:"149"}]},
-{id:"ORD-2026-0019",ordered:"2026-07-23",due:"2026-07-27",name:"Aom",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"",notes:"ลูกค้าใหม่ เห็นจากสตอรี่ IG; อบเสร็จแล้ว 2026-07-25; ส่งและจ่ายแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0020",ordered:"2026-07-23",due:"2026-07-24",name:"พี่ดา",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนบ้านที่แม่ไปขาย/ให้ชิม",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0021",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าเพชรเกษม 53",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เดินผ่านหน้าบ้านแล้วมาถาม; อบเสร็จแล้ว 2026-07-25; รับของแล้ว 2026-07-26",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0022",ordered:"2026-07-24",due:"2026-07-26",name:"พี่อุ๊",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"เพื่อนแม่ในหมู่บ้าน; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงินสด 2026-07-26",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0023",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าพรจิตแมนชั่น",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"มัดจำ 100 เก็บเพิ่ม 119 ครบแล้ว; อบเสร็จแล้ว 2026-07-25; รับของแล้ว 2026-07-26",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
-{id:"ORD-2026-0024",ordered:"2026-07-24",due:"2026-08-07",name:"ฟิล",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"Sourdough Cranberry ราคาปกติ 279; ของชดเชยแยกเป็น ORD-2026-0033",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0025",ordered:"2026-07-24",due:"2026-08-01",name:"เบส",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"OG 1 + Bacon 1 + Cranberry 1 — เลื่อนมารับเป็นเสาร์ 2026-08-01 (จากศุกร์ 2026-07-31)",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"},{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0026",ordered:"2026-07-25",due:"2026-07-27",name:"อุ๋ย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ครึ่งลูก แบ่งกับพี่กานต์ (karn); เดินผ่านหน้าบ้านเห็นป้ายมาสั่ง; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงิน 2026-07-26; ลดราคาเหลือ 140 เพราะครึ่งชิ้นเล็ก",items:[{p:"Cranberry Walnut",v:"ครึ่งลูก (ลดเหลือ 140)",q:"0.5",lt:"140"}]},
-{id:"ORD-2026-0027",ordered:"2026-07-25",due:"2026-07-27",name:"สมชาย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ครึ่งก้อน Bacon แบ่งกับพี่กานต์; ครึ่งของพี่กานต์เก็บไว้ส่ง 27 ก.ค.; อบเสร็จแล้ว 2026-07-25; ส่งแล้ว 2026-07-27; แม่จ่ายให้ก่อน",items:[{p:"Cheddar & Bacon",v:"ครึ่งก้อน (แบ่งกับพี่กานต์)",q:"0.5",lt:"149"}]},
-{id:"ORD-2026-0028",ordered:"2026-07-25",due:"2026-07-31",name:"พิม",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชย ORD-2026-0005 ล็อตเครื่องน้อย); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
-{id:"ORD-2026-0029",ordered:"2026-07-25",due:"2026-07-31",name:"พี่ยอด",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชย ORD-2026-0006 ล็อตเครื่องน้อย); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
-{id:"ORD-2026-0030",ordered:"2026-07-25",due:"2026-07-31",name:"พี่เอ",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชยออเดอร์แรก ORD-2026-0002); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
-{id:"ORD-2026-0031",ordered:"2026-07-25",due:"2026-07-31",name:"นิค",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชยออเดอร์แรก ORD-2026-0003); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
-{id:"ORD-2026-0032",ordered:"2026-07-25",due:"2026-07-27",name:"พี่ดา",status:"delivered",payment:"paid",delivery:"delivery",shipping:"",total:"",notes:"ส่งที่ศูนย์ 40 จันทร์ตอนเที่ยง; ส่งและจ่ายแล้ว 2026-07-27; ยังไม่ตกลงค่าส่ง",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0033",ordered:"2026-07-24",due:"2026-08-07",name:"ฟิล",status:"confirmed",payment:"free",delivery:"",shipping:"",total:"",notes:"ของชดเชยฟรี (ชดเชย ORD-2026-0007 — ฟิลจ่ายเต็ม 259 ทั้งที่ล็อตไม่ดี); Cranberry ลูกเล็กครึ่งลูก; เลื่อนรับเป็น 2026-08-07 (พร้อม ORD-2026-0024); ลองไส้แปลกๆ ให้ฟิลดูได้",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย)",q:"0.5",lt:"0"}]},
-{id:"ORD-2026-0034",ordered:"2026-07-25",due:"2026-07-26",name:"Eye",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลดให้ 10 บาท จากราคาปกติ 279; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงิน 2026-07-26",items:[{p:"Cranberry Walnut",v:"ลดให้ 10 บาท (จาก 279)",q:"1",lt:"269"}]},
-{id:"ORD-2026-0035",ordered:"2026-07-26",due:"2026-07-26",name:"ลูกค้า walk-in A",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"เดินผ่านหน้าบ้าน ไม่ทราบชื่อ; รับและจ่ายวันเดียวกัน",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0036",ordered:"2026-07-26",due:"2026-07-26",name:"ลูกค้า walk-in B",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"เดินผ่านหน้าบ้าน ไม่ทราบชื่อ; รับและจ่ายวันเดียวกัน",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0037",ordered:"2026-07-26",due:"2026-07-26",name:"ลูกค้า walk-in C",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"เดินผ่านหน้าบ้าน ไม่ทราบชื่อ; Bacon ครึ่งลูก 150; รับและจ่ายวันเดียวกัน",items:[{p:"Cheddar & Bacon",v:"ครึ่งลูก",q:"0.5",lt:"150"}]},
-{id:"ORD-2026-0038",ordered:"2026-07-26",due:"2026-07-26",name:"วินมอไซค์",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"วินมอไซค์ผ่านมาหน้าบ้าน ไม่ทราบชื่อ; Bacon ครึ่งลูก 150; รับและจ่ายวันเดียวกัน",items:[{p:"Cheddar & Bacon",v:"ครึ่งลูก",q:"0.5",lt:"150"}]},
-{id:"ORD-2026-0039",ordered:"2026-07-26",due:"2026-07-27",name:"ร้านอาหารเจในซอย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"เจ้าของร้านอาหารเจในซอย คนจีน อายุ 40-50; รับของแล้ว 2026-07-27; จ่ายเงินแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0040",ordered:"2026-07-26",due:"2026-07-26",name:"ร้านขายกล่องพัสดุ",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ร้านขายกล่องพัสดุ(ไปรษณีย์)ในซอย; เห็นหน้าบ้านแล้วมาสั่ง; Cranberry ครึ่งก้อน 150; รับและจ่ายวันเดียวกัน",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน",q:"0.5",lt:"150"}]},
+{id:"ORD-2026-0018",ordered:"2026-07-23",due:"2026-07-27",name:"พี่กานต์",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"299",notes:"1 ก้อนมิกซ์ Cranberry+Bacon อย่างละครึ่ง; ออเดอร์แรกของพี่กานต์; อบเสร็จแล้ว 2026-07-25; ส่งและจ่ายแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน (มิกซ์กับ Bacon)",q:"0.5",lt:"150"},{p:"Cheddar & Bacon",v:"ครึ่งก้อน (มิกซ์กับ Cranberry)",q:"0.5",lt:"149"}]},
+{id:"ORD-2026-0019",ordered:"2026-07-23",due:"2026-07-27",name:"Aom",status:"delivered",payment:"paid",delivery:"",shipping:"",total:"279",notes:"ลูกค้าใหม่ เห็นจากสตอรี่ IG; อบเสร็จแล้ว 2026-07-25; ส่งและจ่ายแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0020",ordered:"2026-07-23",due:"2026-07-24",name:"พี่ดา",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เพื่อนบ้านที่แม่ไปขาย/ให้ชิม",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0021",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าเพชรเกษม 53",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เดินผ่านหน้าบ้านแล้วมาถาม; อบเสร็จแล้ว 2026-07-25; รับของแล้ว 2026-07-26",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0022",ordered:"2026-07-24",due:"2026-07-26",name:"พี่อุ๊",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"เพื่อนแม่ในหมู่บ้าน เดินผ่านหน้าบ้านมาเห็น; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงินสด 2026-07-26",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0023",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าพรจิตแมนชั่น",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"219",notes:"มัดจำ 100 เก็บเพิ่ม 119 ครบแล้ว; อบเสร็จแล้ว 2026-07-25; รับของแล้ว 2026-07-26",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
+{id:"ORD-2026-0024",ordered:"2026-07-24",due:"2026-08-07",name:"ฟิล",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"279",notes:"Sourdough Cranberry ราคาปกติ 279; ของชดเชยแยกเป็น ORD-2026-0033",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0025",ordered:"2026-07-24",due:"2026-08-01",name:"เบส",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"777",notes:"OG 1 + Bacon 1 + Cranberry 1 — เลื่อนมารับเป็นเสาร์ 2026-08-01 (จากศุกร์ 2026-07-31)",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"},{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0026",ordered:"2026-07-25",due:"2026-07-27",name:"อุ๋ย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"140",notes:"ครึ่งลูก แบ่งกับพี่กานต์ (karn); เดินผ่านหน้าบ้านเห็นป้ายมาสั่ง; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงิน 2026-07-26; ลดราคาเหลือ 140 เพราะครึ่งชิ้นเล็ก",items:[{p:"Cranberry Walnut",v:"ครึ่งลูก",q:"0.5",lt:"140"}]},
+{id:"ORD-2026-0027",ordered:"2026-07-25",due:"2026-07-27",name:"สมชาย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"149",notes:"ครึ่งก้อน Bacon แบ่งกับพี่กานต์ (karn); ครึ่งของพี่กานต์เก็บไว้ส่ง 27 ก.ค.; อบเสร็จแล้ว 2026-07-25; ส่งแล้ว 2026-07-27; แม่จ่ายให้ก่อน",items:[{p:"Cheddar & Bacon",v:"ครึ่งก้อน (แบ่งกับพี่กานต์)",q:"0.5",lt:"149"}]},
+{id:"ORD-2026-0028",ordered:"2026-07-25",due:"2026-07-31",name:"พิม",status:"confirmed",payment:"",delivery:"",shipping:"",total:"0",notes:"ของชดเชยฟรี ไม่คิดเงิน (ชดเชย ORD-2026-0005 ล็อตเครื่องน้อย); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย ไม่คิดเงิน)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0029",ordered:"2026-07-25",due:"2026-07-31",name:"พี่ยอด",status:"confirmed",payment:"",delivery:"",shipping:"",total:"0",notes:"ของชดเชยฟรี ไม่คิดเงิน (ชดเชย ORD-2026-0006 ล็อตเครื่องน้อย); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย ไม่คิดเงิน)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0030",ordered:"2026-07-25",due:"2026-07-31",name:"พี่เอ",status:"confirmed",payment:"",delivery:"",shipping:"",total:"0",notes:"ของชดเชยฟรี ไม่คิดเงิน (ชดเชยออเดอร์แรก ORD-2026-0002); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย ไม่คิดเงิน)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0031",ordered:"2026-07-25",due:"2026-07-31",name:"นิค",status:"confirmed",payment:"",delivery:"",shipping:"",total:"0",notes:"ของชดเชยฟรี ไม่คิดเงิน (ชดเชยออเดอร์แรก ORD-2026-0003); Cranberry ลูกเล็กครึ่งลูก อบศุกร์ 31 ก.ค.",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย ไม่คิดเงิน)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0032",ordered:"2026-07-25",due:"2026-07-27",name:"พี่ดา",status:"delivered",payment:"paid",delivery:"delivery",shipping:"",total:"498",notes:"ส่งที่ศูนย์ 40 จันทร์ตอนเที่ยง; ส่งและจ่ายแล้ว 2026-07-27; ยังไม่ตกลงค่าส่ง",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0033",ordered:"2026-07-24",due:"2026-08-07",name:"ฟิล",status:"confirmed",payment:"",delivery:"",shipping:"",total:"0",notes:"ของชดเชยฟรี ไม่คิดเงิน (ชดเชย ORD-2026-0007 ล็อตเครื่องน้อย — ฟิลจ่ายเต็ม 259 ทั้งที่ล็อตไม่ดี); Cranberry ลูกเล็กครึ่งลูก; เลื่อนรับเป็น 2026-08-07 (พร้อม ORD-2026-0024); ลองไส้แปลกๆ ให้ฟิลดูได้",items:[{p:"Cranberry Walnut",v:"ลูกเล็ก ครึ่งลูก (ของชดเชย ไม่คิดเงิน)",q:"0.5",lt:"0"}]},
+{id:"ORD-2026-0034",ordered:"2026-07-25",due:"2026-07-26",name:"Eye",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"269",notes:"ลดให้ 10 บาท จากราคาปกติ 279; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงิน 2026-07-26",items:[{p:"Cranberry Walnut",v:"ลดให้ 10 บาท (จาก 279)",q:"1",lt:"269"}]},
+{id:"ORD-2026-0035",ordered:"2026-07-26",due:"2026-07-26",name:"ลูกค้า walk-in ไม่ทราบชื่อ A",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าเดินผ่านหน้าบ้าน ไม่ทราบชื่อ; รับและจ่ายวันเดียวกัน",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0036",ordered:"2026-07-26",due:"2026-07-26",name:"ลูกค้า walk-in ไม่ทราบชื่อ B",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าเดินผ่านหน้าบ้าน ไม่ทราบชื่อ; รับและจ่ายวันเดียวกัน",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0037",ordered:"2026-07-26",due:"2026-07-26",name:"ลูกค้า walk-in ไม่ทราบชื่อ C",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"150",notes:"ลูกค้าเดินผ่านหน้าบ้าน ไม่ทราบชื่อ; Bacon ครึ่งลูก 150; รับและจ่ายวันเดียวกัน",items:[{p:"Cheddar & Bacon",v:"ครึ่งลูก",q:"0.5",lt:"150"}]},
+{id:"ORD-2026-0038",ordered:"2026-07-26",due:"2026-07-26",name:"วินมอไซค์ (ไม่ทราบชื่อ)",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"150",notes:"วินมอไซค์ผ่านมาหน้าบ้าน ไม่ทราบชื่อ; Bacon ครึ่งลูก 150; รับและจ่ายวันเดียวกัน",items:[{p:"Cheddar & Bacon",v:"ครึ่งลูก",q:"0.5",lt:"150"}]},
+{id:"ORD-2026-0039",ordered:"2026-07-26",due:"2026-07-27",name:"ร้านอาหารเจในซอย (ไม่ทราบชื่อ)",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"เจ้าของร้านอาหารเจในซอย คนจีน อายุ 40-50; รับของแล้ว 2026-07-27; จ่ายเงินแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0040",ordered:"2026-07-26",due:"2026-07-26",name:"ร้านขายกล่องพัสดุ(ไปรษณีย์)ในซอย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"150",notes:"ร้านขายกล่องพัสดุ(ไปรษณีย์)ในซอย; เห็นหน้าบ้านแล้วมาสั่ง; Cranberry ครึ่งก้อน 150; รับและจ่ายวันเดียวกัน",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน",q:"0.5",lt:"150"}]},
 {id:"ORD-2026-0041",ordered:"2026-07-26",due:"2026-07-27",name:"นาย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"เพื่อนข้างบ้าน นักศึกษา; แม่เป็นคนจ่ายเงินให้; ราคายังไม่ตกลง; ส่งแล้ว 2026-07-27",items:[{p:"OG Sourdough",v:"ครึ่งก้อน",q:"0.5",lt:""},{p:"Cheddar & Bacon",v:"ครึ่งก้อน",q:"0.5",lt:""}]},
-{id:"ORD-2026-0042",ordered:"2026-07-26",due:"2026-07-27",name:"Eye",status:"delivered",payment:"unpaid",delivery:"",shipping:"",total:"",notes:"Cheddar & Bacon ครึ่งก้อน 149; รับแล้ว 2026-07-27; รอชำระ",items:[{p:"Cheddar & Bacon",v:"ครึ่งก้อน",q:"0.5",lt:"149"}]},
-{id:"ORD-2026-0043",ordered:"2026-07-27",due:"2026-07-27",name:"ดี",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ walk-in เห็นหน้าร้านแล้วมาซื้อ (ซอยเพชรเกษม 51); จ่ายเงินแล้ว; รับแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0044",ordered:"2026-07-27",due:"2026-07-29",name:"แม่เอก",status:"confirmed",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนแม่ คนในซอย; เลื่อนมารับเป็นพุธ 2026-07-29; จ่ายแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0045",ordered:"2026-07-27",due:"2026-07-31",name:"Fight",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนมหาลัย + office อายุ 28; รับศุกร์ 2026-07-31",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0046",ordered:"2026-07-27",due:"2026-07-31",name:"Tee",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนออฟฟิศ อายุ 24; รับศุกร์ 2026-07-31; Special request: ใส่ mozzarella ถ้าเป็นไปได้",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0047",ordered:"2026-07-27",due:"2026-07-30",name:"อี้หมุ่ย",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เพื่อนแม่ คนในซอย; เปลี่ยนมารับวันนี้ 2026-07-30 (จากเสาร์ 2026-08-01); เปลี่ยนรสเป็น Cranberry (จาก Cheddar & Bacon)",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0042",ordered:"2026-07-26",due:"2026-07-27",name:"Eye",status:"delivered",payment:"unpaid",delivery:"",shipping:"",total:"149",notes:"Bacon ครึ่งก้อน 149; รับแล้ว 2026-07-27; รอชำระ",items:[{p:"Cheddar & Bacon",v:"ครึ่งก้อน",q:"0.5",lt:"149"}]},
+{id:"ORD-2026-0043",ordered:"2026-07-27",due:"2026-07-27",name:"ดี",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เห็นหน้าร้านแล้วมาซื้อ; จ่ายเงินแล้ว; รับแล้ว 2026-07-27",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0044",ordered:"2026-07-27",due:"2026-07-29",name:"แม่เอก",status:"confirmed",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เพื่อนแม่ คนในซอย; เลื่อนมารับเป็นพุธ 2026-07-29; จ่ายแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0045",ordered:"2026-07-27",due:"2026-07-31",name:"Fight",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เพื่อนมหาลัย + office อายุ 28; รับศุกร์ 2026-07-31",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0046",ordered:"2026-07-27",due:"2026-07-31",name:"Tee",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เพื่อนออฟฟิศ อายุ 24; รับศุกร์ 2026-07-31; Special request: ใส่ mozzarella ถ้าเป็นไปได้",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0047",ordered:"2026-07-27",due:"2026-07-30",name:"อี้หมุ่ย",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เพื่อนแม่ คนในซอย; เลื่อนมารับเป็นเสาร์ 2026-08-01 (จากศุกร์ 2026-07-31); เปลี่ยนมารับวันนี้ 2026-07-30 (จากเสาร์ 2026-08-01); เปลี่ยนรสเป็น Cranberry (จาก Cheddar & Bacon)",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0048",ordered:"2026-07-27",due:"2026-07-30",name:"Ratchani Yuenyaw",status:"delivered",payment:"paid",delivery:"delivery",shipping:"45",total:"264",notes:"ลูกค้าใหม่จากเฟสบุ๊ค; เพื่อนของอี้ (My Auntie) อี้แนะนำมา; ส่งไปรษณีย์ พรุ่งนี้เช้า 2026-07-30; ค่าส่ง 45; จ่ายแล้ว; ส่งแล้ว 2026-07-30",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
-{id:"ORD-2026-0049",ordered:"2026-07-28",due:"2026-07-31",name:"พี่วรรณ",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ พี่วรรณ ร้านขายน้ำในซอย; รับศุกร์ 2026-07-31; ลดราคาเหลือ 140",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน (ลดเหลือ 140)",q:"0.5",lt:"140"}]},
-{id:"ORD-2026-0050",ordered:"2026-07-28",due:"2026-07-31",name:"เจ๊คิ้ม",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ เจ๊คิ้ม บ้านตรงข้ามในซอย; ขอเบค่อนผสมในก้อน Cranberry เดียวกัน; รับศุกร์ 2026-07-31",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน;ผสมเบค่อน",q:"0.5",lt:"150"}]},
-{id:"ORD-2026-0051",ordered:"2026-07-28",due:"2026-07-31",name:"ส้ม",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ ส้ม ข้างบ้านในซอย; รับศุกร์ 2026-07-31",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0052",ordered:"2026-07-28",due:"2026-07-31",name:"ลูกค้า walk-in (063-559-4919)",status:"confirmed",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ walk-in หญิง อายุ 28 ในซอย; เห็นป้ายหน้าบ้านเลยสั่ง; จ่ายเงินแล้ว 2026-07-28; เลื่อนมารับเป็นเช้าวันศุกร์ 2026-07-31 (จากจันทร์ 2026-08-03)",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
-{id:"ORD-2026-0053",ordered:"2026-07-29",due:"2026-08-01",name:"คุณหลิว",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ คุณหลิว ในซอย; รับเสาร์ 2026-08-01",items:[{p:"Cranberry Walnut",v:"",q:"2",lt:"558"}]},
-{id:"ORD-2026-0054",ordered:"2026-07-29",due:"2026-07-30",name:"มายด์",status:"delivered",payment:"unpaid",delivery:"delivery",shipping:"",total:"",notes:"ลูกค้าใหม่ มายด์ เพื่อนร่วมห้องจากออส; ส่งไปรษณีย์ไปสุรินทร์ (รุจิพร สวรรณสุข); ยังไม่ตกลงค่าส่ง; เลื่อนมาส่งพรุ่งนี้ 2026-07-30 (จากเสาร์ 2026-08-01); ส่งแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0055",ordered:"2026-07-29",due:"2026-07-30",name:"นัจ",status:"delivered",payment:"unpaid",delivery:"delivery",shipping:"",total:"",notes:"ลูกค้าใหม่ นัจ อรรถโสภากุล เพื่อนของอี้ (My Auntie) อี้แนะนำมา; ส่งพรุ่งนี้ 2026-07-30; ยังไม่ตกลงค่าส่ง; ส่งแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0056",ordered:"2026-07-30",due:"2026-07-30",name:"ร้านราดหน้าซอย 1",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"",notes:"ลูกค้าใหม่ ร้านราดหน้าซอย 1 ในซอย; Cranberry ครึ่งลูก 140 (ลดจาก 150); รับวันนี้ 2026-07-30; จ่ายแล้ว; ส่งของแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"ครึ่งลูก (ลดเหลือ 140)",q:"0.5",lt:"140"}]},
-{id:"ORD-2026-0057",ordered:"2026-07-30",due:"",name:"แม่เอก",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"",notes:"ออเดอร์ที่ 2 ของแม่เอก; Cranberry ครึ่งก้อน 140; ยังไม่ระบุวันรับ",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน",q:"0.5",lt:"140"}]},
+{id:"ORD-2026-0049",ordered:"2026-07-28",due:"2026-07-31",name:"พี่วรรณ",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"140",notes:"ลูกค้าใหม่ พี่วรรณ ร้านขายน้ำในซอย; รับศุกร์ 2026-07-31; ลดราคาเหลือ 140",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน (ลดเหลือ 140)",q:"0.5",lt:"140"}]},
+{id:"ORD-2026-0050",ordered:"2026-07-28",due:"2026-07-31",name:"เจ๊คิ้ม",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"150",notes:"ลูกค้าใหม่ เจ๊คิ้ม บ้านตรงข้ามในซอย; ขอเบค่อนผสมในก้อน Cranberry เดียวกัน; รับศุกร์ 2026-07-31",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน;ผสมเบค่อน",q:"0.5",lt:"150"}]},
+{id:"ORD-2026-0051",ordered:"2026-07-28",due:"2026-07-31",name:"ส้ม",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ ส้ม ข้างบ้านในซอย; รับศุกร์ 2026-07-31",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0052",ordered:"2026-07-28",due:"2026-07-31",name:"ลูกค้า walk-in ไม่ทราบชื่อ",status:"confirmed",payment:"paid",delivery:"pickup",shipping:"",total:"219",notes:"ลูกค้าใหม่ walk-in หญิง อายุ 28 ในซอย; เห็นป้ายหน้าบ้านเลยสั่ง; จ่ายเงินแล้ว 2026-07-28; เลื่อนมารับเป็นเช้าวันศุกร์ 2026-07-31 (จากจันทร์ 2026-08-03)",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
+{id:"ORD-2026-0053",ordered:"2026-07-29",due:"2026-08-01",name:"คุณหลิว",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"558",notes:"ลูกค้าใหม่ คุณหลิว ในซอย; รับเสาร์ 2026-08-01",items:[{p:"Cranberry Walnut",v:"",q:"2",lt:"558"}]},
+{id:"ORD-2026-0054",ordered:"2026-07-29",due:"2026-07-30",name:"มายด์",status:"delivered",payment:"unpaid",delivery:"delivery",shipping:"",total:"279",notes:"ลูกค้าใหม่ มายด์ เพื่อนร่วมห้องจากออส; ส่งไปรษณีย์ไปสุรินทร์; ยังไม่ตกลงค่าส่ง; เลื่อนมาส่งพรุ่งนี้ 2026-07-30 (จากเสาร์ 2026-08-01); ส่งแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0055",ordered:"2026-07-29",due:"2026-07-30",name:"นัจ",status:"delivered",payment:"unpaid",delivery:"delivery",shipping:"",total:"279",notes:"ลูกค้าใหม่ นัจ เพื่อนของอี้ (My Auntie) อี้แนะนำมา; ส่งพรุ่งนี้ 2026-07-30; ยังไม่ตกลงค่าส่ง; ส่งแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
+{id:"ORD-2026-0056",ordered:"2026-07-30",due:"2026-07-30",name:"ร้านราดหน้าซอย 1",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"140",notes:"ลูกค้าใหม่ ร้านราดหน้าซอย 1 ในซอย; Cranberry ครึ่งลูก 140 (ลดจาก 150); รับวันนี้ 2026-07-30; จ่ายแล้ว; ส่งของแล้ว 2026-07-30",items:[{p:"Cranberry Walnut",v:"ครึ่งลูก (ลดเหลือ 140)",q:"0.5",lt:"140"}]},
+{id:"ORD-2026-0057",ordered:"2026-07-30",due:"",name:"แม่เอก",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"140",notes:"ออเดอร์ที่ 2 ของแม่เอก; Cranberry ครึ่งก้อน 140; ยังไม่ระบุวันรับ",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน",q:"0.5",lt:"140"}]},
 ];
+/* ===== END GENERATED ===== */
 
 /* ================= ตรรกะของหน้าเว็บ (ไม่ต้องแก้) ================= */
 const $ = s => document.querySelector(s);
@@ -581,6 +604,12 @@ function payKey(o) {
   if (o.payment === "free" || o.payment === "" ) return "free";
   return o.payment;
 }
+/* "ปิดแล้ว" = ไม่เหลืออะไรต้องทำ: ส่งแล้ว + เก็บเงินครบ (หรือเป็นของฟรี) หรือยกเลิกไปแล้ว
+   ตารางซ่อนพวกนี้เป็นค่าเริ่มต้น (สวิตช์ "ซ่อนที่ปิดแล้ว") — แต่แผงสรุปด้านบนยังนับทุกใบตามเดิม */
+function isClosed(o) {
+  if (o.status === "cancelled") return true;
+  return o.status === "delivered" && (payKey(o) === "paid" || payKey(o) === "free");
+}
 function relDue(o) {
   if (!o.due) return { txt:"ยังไม่นัด", cls:"" };
   const d = new Date(o.due+"T00:00:00");
@@ -594,7 +623,14 @@ function relDue(o) {
 function esc(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
 
 /* ---- filters state ---- */
-const state = { status:"", q:"", payment:"", delivery:"", product:"", from:"", to:"", sortK:"due", sortDir:1 };
+const state = { status:"", q:"", payment:"", delivery:"", product:"", from:"", to:"", hideClosed:true, sortK:"due", sortDir:1 };
+
+/* สวิตช์ซ่อนออเดอร์ที่ปิดแล้ว — เปิดไว้ตอนโหลด บอร์ดจะเหลือแต่งานที่ต้องทำ */
+function setHideClosed(v){
+  state.hideClosed = v;
+  $("#hideClosed").checked = v;
+  $("#hideClosedLabel").classList.toggle("on", v);
+}
 
 const STATUS_ORDER = ["", "confirmed", "making", "delivered", "inquiry", "cancelled"];
 const STATUS_LABEL = { "":"ทั้งหมด" };
@@ -603,11 +639,20 @@ const chipsEl = $("#statusChips");
 STATUS_ORDER.forEach(k=>{
   const b=document.createElement("button");
   b.className="chip"+(k===""?" on":""); b.textContent=STATUS_LABEL[k]; b.dataset.k=k;
-  b.onclick=()=>{ state.status=k; chipsEl.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.dataset.k===k)); render(); };
+  b.onclick=()=>{
+    state.status=k; chipsEl.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.dataset.k===k));
+    if(k==="delivered"||k==="cancelled") setHideClosed(false); /* เลือกดูของที่ปิดแล้วตรงๆ → ปลดสวิตช์ให้ ไม่งั้นตารางว่างเปล่า */
+    render();
+  };
   chipsEl.appendChild(b);
 });
+$("#hideClosed").onchange = e=>{ setHideClosed(e.target.checked); render(); };
 $("#q").oninput = e=>{ state.q=e.target.value.trim().toLowerCase(); render(); };
-$("#fPayment").onchange = e=>{ state.payment=e.target.value; render(); };
+$("#fPayment").onchange = e=>{
+  state.payment=e.target.value;
+  if(state.payment==="paid"||state.payment==="free") setHideClosed(false);
+  render();
+};
 $("#fDelivery").onchange = e=>{ state.delivery=e.target.value; render(); };
 $("#fProduct").onchange = e=>{ state.product=e.target.value; render(); };
 $("#fFrom").onchange = e=>{ state.from=e.target.value; render(); };
@@ -616,6 +661,7 @@ $("#clearBtn").onclick = ()=>{
   Object.assign(state,{status:"",q:"",payment:"",delivery:"",product:"",from:"",to:""});
   $("#q").value=""; $("#fPayment").value=""; $("#fDelivery").value=""; $("#fProduct").value=""; $("#fFrom").value=""; $("#fTo").value="";
   chipsEl.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.dataset.k===""));
+  setHideClosed(true);   /* ล้างตัวกรอง = กลับไปมุมมองตั้งต้น (เห็นแต่งานที่ต้องทำ) */
   render();
 };
 
@@ -627,8 +673,9 @@ document.querySelectorAll("thead th[data-k]").forEach(th=>{
   };
 });
 
+/* คืน { rows, hidden } — hidden = จำนวนใบที่ตรงตัวกรองอื่นครบ แต่ถูกสวิตช์ "ซ่อนที่ปิดแล้ว" ตัดออก */
 function filtered(){
-  return ORDERS.filter(o=>{
+  const base = ORDERS.filter(o=>{
     if(state.status && o.status!==state.status) return false;
     if(state.payment && payKey(o)!==state.payment) return false;
     if(state.delivery && o.delivery!==state.delivery) return false;
@@ -640,7 +687,9 @@ function filtered(){
       if(!hay.includes(state.q)) return false;
     }
     return true;
-  }).sort((a,b)=>{
+  });
+  const rows = state.hideClosed ? base.filter(o=>!isClosed(o)) : base;
+  rows.sort((a,b)=>{
     const dir=state.sortDir, k=state.sortK;
     let va, vb;
     if(k==="amount"){ va=amount(a); vb=amount(b); }
@@ -649,6 +698,7 @@ function filtered(){
     if(va<vb) return -dir; if(va>vb) return dir;
     return a.id<b.id?-1:1;
   });
+  return { rows, hidden: base.length - rows.length };
 }
 
 function fmtDate(iso){
@@ -838,8 +888,9 @@ function render(){
   document.querySelectorAll("thead th[data-k]").forEach(th=>{
     th.querySelector(".arrow").textContent = th.dataset.k===state.sortK ? (state.sortDir>0?"▲":"▼") : "";
   });
-  const rows=filtered();
-  $("#count").textContent=`แสดง ${rows.length} จาก ${ORDERS.length} ออเดอร์`;
+  const {rows, hidden}=filtered();
+  $("#count").textContent=`แสดง ${rows.length} จาก ${ORDERS.length} ออเดอร์`
+    + (hidden?` · ซ่อนที่ปิดแล้ว ${hidden} ใบ`:"");
   $("#empty").hidden = rows.length>0;
 
   const tb=$("#tbody"); tb.innerHTML="";
@@ -883,6 +934,15 @@ function render(){
   renderProducts();
   renderMoney();
 }
+
+/* ตัวเลือกในกล่อง "เมนู" สร้างจากข้อมูลจริง — เมนูใหม่โผล่เองหลังรัน build-dashboard.py */
+(function initProductOptions(){
+  const seen={}; ORDERS.forEach(o=>o.items.forEach(i=>{ if(i.p) seen[i.p]=1; }));
+  const sel=$("#fProduct");
+  prodsOf(seen).forEach(p=>{
+    const opt=document.createElement("option"); opt.value=p; opt.textContent=p; sel.appendChild(opt);
+  });
+})();
 
 $("#updatedAt").textContent = new Date(UPDATED+"T00:00:00").toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric"});
 render();
