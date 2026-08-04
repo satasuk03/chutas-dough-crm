@@ -523,7 +523,7 @@
  *            p = short-name จากโน้ตสินค้า, v = variant, q = qty, lt = line_total
  * ================================================================ */
 /* ===== GENERATED FROM CSV — สร้างด้วย build-dashboard.py — ห้ามแก้มือ ===== */
-const UPDATED = "2026-08-03";
+const UPDATED = "2026-08-04";
 
 const ORDERS = [
 {id:"ORD-2026-0001",ordered:"2026-07-16",due:"2026-07-19",name:"Pam",status:"delivered",payment:"paid",delivery:"delivery",shipping:"",total:"1049",notes:"",items:[{p:"Cheddar & Bacon",v:"ล็อตแรก ไซส์ใหญ่ (ราคาเปิดเตาพิเศษ)",q:"1",lt:"329"}]},
@@ -548,7 +548,7 @@ const ORDERS = [
 {id:"ORD-2026-0020",ordered:"2026-07-23",due:"2026-07-24",name:"พี่ดา",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เพื่อนบ้านที่แม่ไปขาย/ให้ชิม",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0021",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าเพชรเกษม 53",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"ลูกค้าใหม่ เดินผ่านหน้าบ้านแล้วมาถาม; อบเสร็จแล้ว 2026-07-25; รับของแล้ว 2026-07-26",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0022",ordered:"2026-07-24",due:"2026-07-26",name:"พี่อุ๊",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"279",notes:"เพื่อนแม่ในหมู่บ้าน เดินผ่านหน้าบ้านมาเห็น; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงินสด 2026-07-26",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0023",ordered:"2026-07-24",due:"2026-07-26",name:"ลูกค้าพรจิตแมนชั่น",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"219",notes:"มัดจำ 100 เก็บเพิ่ม 119 ครบแล้ว; อบเสร็จแล้ว 2026-07-25; รับของแล้ว 2026-07-26",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
+{id:"ORD-2026-0023",ordered:"2026-07-24",due:"2026-07-26",name:"คุณใหม่",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"219",notes:"มัดจำ 100 เก็บเพิ่ม 119 ครบแล้ว; อบเสร็จแล้ว 2026-07-25; รับของแล้ว 2026-07-26",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
 {id:"ORD-2026-0024",ordered:"2026-07-24",due:"2026-08-07",name:"ฟิล",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"279",notes:"Sourdough Cranberry ราคาปกติ 279; ของชดเชยแยกเป็น ORD-2026-0033",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0025",ordered:"2026-07-24",due:"2026-08-08",name:"เบส",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"777",notes:"OG 1 + Bacon 1 + Cranberry 1 — เลื่อนรับเป็นอาทิตย์หน้า เสาร์ 2026-08-08 (จากเสาร์ 2026-08-01 ซึ่งเลื่อนมาจากศุกร์ 2026-07-31)",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"},{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0026",ordered:"2026-07-25",due:"2026-07-27",name:"อุ๋ย",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"140",notes:"ครึ่งลูก แบ่งกับพี่กานต์ (karn); เดินผ่านหน้าบ้านเห็นป้ายมาสั่ง; อบเสร็จแล้ว 2026-07-25; รับและจ่ายเงิน 2026-07-26; ลดราคาเหลือ 140 เพราะครึ่งชิ้นเล็ก",items:[{p:"Cranberry Walnut",v:"ครึ่งลูก",q:"0.5",lt:"140"}]},
@@ -591,6 +591,7 @@ const ORDERS = [
 {id:"ORD-2026-0063",ordered:"2026-08-03",due:"2026-08-07",name:"Tee",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"279",notes:"ออเดอร์ที่ 2 ของ Tee; Cheddar & Bacon 1 ก้อน 279; Special request: หั่นสไลซ์หนา 1.2 ซม.; นัดรับศุกร์ 2026-08-07",items:[{p:"Cheddar & Bacon",v:"หั่นสไลซ์ 1.2 ซม.",q:"1",lt:"279"}]},
 {id:"ORD-2026-0064",ordered:"2026-08-03",due:"2026-08-09",name:"อี้หมุ่ย",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"279",notes:"ออเดอร์ที่ 2 ของอี้หมุ่ย; Cheddar & Bacon 1 ก้อน 279; นัดรับอาทิตย์ 2026-08-09",items:[{p:"Cheddar & Bacon",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0065",ordered:"2026-08-03",due:"2026-08-09",name:"นาย",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"270",notes:"ออเดอร์ที่ 2 ของนาย (Nile); Cheddar & Bacon ครึ่งก้อน 150 + OG ครึ่งก้อน 120; นัดรับอาทิตย์ 2026-08-09",items:[{p:"Cheddar & Bacon",v:"ครึ่งก้อน",q:"0.5",lt:"150"},{p:"OG Sourdough",v:"ครึ่งก้อน",q:"0.5",lt:"120"}]},
+{id:"ORD-2026-0066",ordered:"2026-08-04",due:"2026-08-09",name:"คุณใหม่",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"249",notes:"ออเดอร์ที่ 2 ของคุณใหม่; Wholegrain 1 ก้อน 249; นัดรับอาทิตย์ 2026-08-09; TODO ต้องโทรแจ้งลูกค้า",items:[{p:"Wholegrain",v:"",q:"1",lt:"249"}]},
 ];
 /* ===== END GENERATED ===== */
 
