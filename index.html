@@ -697,7 +697,7 @@ const ORDERS = [
 {id:"ORD-2026-0169",ordered:"2026-10-06",due:"2026-10-31",name:"Bom (Blockfint)",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"219",notes:"ลูกค้าใหม่ Bom (Blockfint); Original 1 ก้อน 219; นัดรับ 2026-10-31",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
 {id:"ORD-2026-0170",ordered:"2026-10-06",due:"2026-10-31",name:"J (Blockfint)",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"498",notes:"ลูกค้าใหม่ J (Blockfint); Cranberry 1 ก้อน 279 + Original 1 ก้อน 219 รวม 498; นัดรับ 2026-10-31",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"},{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
 {id:"ORD-2026-0171",ordered:"2026-10-09",due:"2026-10-10",name:"เฮียชิน",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"279",notes:"ลูกค้าใหม่ เฮียชิน; Cranberry 1 ก้อน 279; นัดรับเสาร์ 2026-10-10",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
-{id:"ORD-2026-0172",ordered:"2026-10-09",due:"2026-10-10",name:"ซู",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"309",notes:"ลูกค้าใหม่ ซู; เมนูสั่งพิเศษ Cranberry เพิ่มธัญพืช 1 ก้อน 309; นัดรับเสาร์ 2026-10-10",items:[{p:"Cranberry Walnut",v:"เมนูพิเศษ;เพิ่มธัญพืช",q:"1",lt:"309"}]},
+{id:"ORD-2026-0172",ordered:"2026-10-09",due:"2026-10-10",name:"ซู",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"309",notes:"ลูกค้าใหม่ ซู; เมนูสั่งพิเศษ Cranberry เพิ่มธัญพืช 1 ก้อน 309; นัดรับเสาร์ 2026-10-10",items:[{p:"Cranberry Walnut",v:"เพิ่มธัญพืช",q:"1",lt:"309"}]},
 {id:"ORD-2026-0173",ordered:"2026-10-09",due:"2026-10-12",name:"Nueng (หนึ่ง)",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"219",notes:"ออเดอร์ที่ 2 ของ Nueng (หนึ่ง); Original 1 ก้อน 219; นัดรับจันทร์ 2026-10-12",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
 ];
 /* ===== END GENERATED ===== */
@@ -922,6 +922,11 @@ function renderSchedule(){
     return `<div class="bake"><span class="tot">ต้องอบ ${fmtQ(loaves)} ก้อน</span>${bakeChips(prods)}</div>`;
   };
 
+  // รายการในตารางอบ — โชว์ variant (ไส้/สั่งพิเศษ) ด้วย ยกเว้น "ครึ่งก้อน" ที่ qty บอกอยู่แล้ว
+  const bakeItem=i=>{
+    const v=(i.v||"").split(";").map(x=>x.trim()).filter(x=>x&&x!=="ครึ่งก้อน").join(" · ");
+    return `${fmtQ(num(i.q))}× ${esc(i.p)}${v?` <span class="v">(${esc(v)})</span>`:""}`;
+  };
   let html="";
   Object.keys(groups).sort().forEach(due=>{
     const d=new Date(due+"T00:00:00");
@@ -929,7 +934,7 @@ function renderSchedule(){
     const cls=diff===0?"today":(diff<0?"late":"");
     const rel=diff<0?`เลยนัด ${-diff} วัน`:diff===0?"วันนี้!":diff===1?"พรุ่งนี้":`อีก ${diff} วัน`;
     const whos=groups[due].map(o=>{
-      const what=o.items.map(i=>`${fmtQ(num(i.q))}× ${esc(i.p)}`).join(" + ");
+      const what=o.items.map(bakeItem).join(" + ");
       return `<div class="who"><span class="n">${esc(o.name)}</span><span class="what">${what}</span></div>`;
     }).join("");
     html+=`<div class="dayrow ${cls}">
@@ -939,7 +944,7 @@ function renderSchedule(){
   });
   if(unscheduled.length){
     const whos=unscheduled.map(o=>
-      `<div class="who"><span class="n">${esc(o.name)}</span><span class="what">${o.items.map(i=>`${fmtQ(num(i.q))}× ${esc(i.p)}`).join(" + ")}</span></div>`
+      `<div class="who"><span class="n">${esc(o.name)}</span><span class="what">${o.items.map(bakeItem).join(" + ")}</span></div>`
     ).join("");
     html+=`<div class="dayrow">
       <div class="daystamp"><div class="d">?</div><div class="m">ยังไม่นัด</div></div>
