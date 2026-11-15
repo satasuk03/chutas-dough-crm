@@ -523,7 +523,7 @@
  *            p = short-name จากโน้ตสินค้า, v = variant, q = qty, lt = line_total
  * ================================================================ */
 /* ===== GENERATED FROM CSV — สร้างด้วย build-dashboard.py — ห้ามแก้มือ ===== */
-const UPDATED = "2026-11-12";
+const UPDATED = "2026-11-15";
 
 const ORDERS = [
 {id:"ORD-2026-0001",ordered:"2026-07-16",due:"2026-07-19",name:"Pam",status:"delivered",payment:"paid",delivery:"delivery",shipping:"",total:"1049",notes:"",items:[{p:"Cheddar & Bacon",v:"ล็อตแรก ไซส์ใหญ่ (ราคาเปิดเตาพิเศษ)",q:"1",lt:"329"}]},
@@ -724,7 +724,7 @@ const ORDERS = [
 {id:"ORD-2026-0196",ordered:"2026-11-04",due:"2026-11-06",name:"เอิธ",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"249",notes:"ลูกค้าใหม่ เอิธ; ธัญพืช 1 ก้อน 249; นัดรับศุกร์ 2026-11-06; แถมชอคโกแลต 1 ชิ้น (ฟรี ไม่คิดเงิน)",items:[{p:"Wholegrain",v:"",q:"1",lt:"249"}]},
 {id:"ORD-2026-0197",ordered:"2026-11-04",due:"2026-11-06",name:"ดา (เตี๋ยวเป็ด)",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"155",notes:"ครึ่งก้อน Cranberry + เพิ่มธัญพืช แบบซู 155 (310÷2); นัดรับศุกร์ 2026-11-06 (ขอเดิมจันทร์ 2026-11-09 รับวันไหนก็ได้)",items:[{p:"Cranberry Walnut",v:"ครึ่งก้อน;เพิ่มธัญพืช",q:"0.5",lt:"155"}]},
 {id:"ORD-2026-0198",ordered:"2026-11-06",due:"2026-11-09",name:"พี่ดา",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"777",notes:"ออเดอร์ที่ 6 ของพี่ดา; OG 1 + Cranberry Walnut 2 (แก้ไขจากเดิมที่มีธัญพืชด้วย); นัดจันทร์ 2026-11-09; ยังไม่ระบุวิธีรับ/ส่ง",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"},{p:"Cranberry Walnut",v:"",q:"2",lt:"558"}]},
-{id:"ORD-2026-0199",ordered:"2026-11-06",due:"2026-11-09",name:"อี้หมวย",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"219",notes:"OG 1 ก้อน 219; นัดจันทร์ 2026-11-09; ยังไม่ระบุวิธีรับ/ส่ง",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
+{id:"ORD-2026-0199",ordered:"2026-11-06",due:"2026-11-09",name:"อี้หมวย",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"150",notes:"OG 1 ก้อน 150 (แก้ราคาจาก 219 เมื่อ 2026-11-15); นัดจันทร์ 2026-11-09; ยังไม่ระบุวิธีรับ/ส่ง",items:[{p:"OG Sourdough",v:"",q:"1",lt:"150"}]},
 {id:"ORD-2026-0200",ordered:"2026-11-06",due:"2026-11-09",name:"พี่นัท (Blockfint)",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"279",notes:"ลูกค้าใหม่ พี่นัท Blockfint; Cranberry Walnut 1 ก้อน 279; นัดจันทร์ 2026-11-09; ยังไม่ระบุวิธีรับ/ส่ง",items:[{p:"Cranberry Walnut",v:"",q:"1",lt:"279"}]},
 {id:"ORD-2026-0201",ordered:"2026-11-06",due:"2026-11-09",name:"แจน",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"578",notes:"ออเดอร์ที่ 2 ของแจน; Truffle 1 + ธัญพืช 1; นัดจันทร์ 2026-11-09; ยังไม่ระบุวิธีรับ/ส่ง",items:[{p:"Truffle",v:"",q:"1",lt:"329"},{p:"Wholegrain",v:"",q:"1",lt:"249"}]},
 {id:"ORD-2026-0202",ordered:"2026-11-10",due:"2026-11-13",name:"พี่ Oat",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"249",notes:"ลูกค้าใหม่ พี่ Oat; ธัญพืช 1 ก้อน 249; นัดศุกร์ 2026-11-13; ยังไม่ระบุวิธีรับ/ส่ง",items:[{p:"Wholegrain",v:"",q:"1",lt:"249"}]},
@@ -734,6 +734,8 @@ const ORDERS = [
 {id:"ORD-2026-0206",ordered:"2026-11-10",due:"2026-11-12",name:"พี่พร ร้านเกม",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"219",notes:"OG 1 ก้อน 219; นัดพฤหัส 2026-11-12",items:[{p:"OG Sourdough",v:"",q:"1",lt:"219"}]},
 {id:"ORD-2026-0207",ordered:"2026-11-11",due:"2026-11-13",name:"พี่ดา",status:"confirmed",payment:"unpaid",delivery:"",shipping:"",total:"558",notes:"ออเดอร์ที่ 7 ของพี่ดา; Cranberry Walnut 2 ก้อน 558 (1 ก้อนแบ่ง 2 ถุง); ส่งศุกร์ 2026-11-13 ก่อนเที่ยง; ยังไม่ระบุวิธีรับ/ส่ง",items:[{p:"Cranberry Walnut",v:"1 ก้อนแบ่ง 2 ถุง",q:"2",lt:"558"}]},
 {id:"ORD-2026-0208",ordered:"2026-11-12",due:"2026-11-13",name:"ร้านขายพระ",status:"confirmed",payment:"unpaid",delivery:"pickup",shipping:"",total:"518",notes:"ร้านขายพระ; Cheese & Rosemary 1 ก้อน 269 + Wholegrain (ธัญพืช) 1 ก้อน 249; นัดรับพรุ่งนี้ 2026-11-13",items:[{p:"Cheese & Rosemary",v:"",q:"1",lt:"269"},{p:"Wholegrain",v:"",q:"1",lt:"249"}]},
+{id:"ORD-2026-0209",ordered:"2026-11-13",due:"2026-11-13",name:"เจ๊ชุ",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"110",notes:"ออเดอร์ที่ 5 ของเจ๊ชุ; Wholegrain ครึ่งก้อน 110; รับและจ่ายแล้ว ศุกร์ 2026-11-13",items:[{p:"Wholegrain",v:"ครึ่งก้อน",q:"0.5",lt:"110"}]},
+{id:"ORD-2026-0210",ordered:"2026-11-13",due:"2026-11-13",name:"คุณใหม่",status:"delivered",payment:"paid",delivery:"pickup",shipping:"",total:"110",notes:"ออเดอร์ที่ 3 ของคุณใหม่ (เมียยาม); Wholegrain ครึ่งก้อน 110 เหมือนเจ๊ชุ; ส่งและจ่ายแล้ว ศุกร์ 2026-11-13",items:[{p:"Wholegrain",v:"ครึ่งก้อน",q:"0.5",lt:"110"}]},
 ];
 /* ===== END GENERATED ===== */
 
